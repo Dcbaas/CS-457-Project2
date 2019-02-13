@@ -28,6 +28,7 @@ namespace shared{
         Packet constructResponseICMP(Packet& request);
 
 //        ~Packet();
+        bool isARP() const;
 
     private:
         HeaderDetail detail;

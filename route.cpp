@@ -14,6 +14,7 @@ int main(){
     //Define 2 Packet objects one for reciving, the other for sending.
     shared::Packet sendPacket;
     shared::Packet recivePacket;
+
     int packet_socket;
     //get list of interface addresses. This is a linked list. Next
     //pointer is in ifa_next, interface name is in ifa_name, address is
@@ -84,6 +85,14 @@ int main(){
             continue;
         //start processing all others
         printf("Got a %d byte packet\n", n);
+
+        sendPacket = shared::Packet(buf);
+        if(sendPacket.isARP()){
+            printf("Got an ARP packet\n");
+        }
+        else{
+            printf("Got an ICMP packet\n");
+        }
 
         //what else to do is up to you, you can send packets with send,
         //just like we used for TCP sockets (or you can use sendto, but it

@@ -34,5 +34,9 @@ namespace shared{
         throw 1;
     }
     Packet::Packet(){}
+
+    bool Packet::isARP() const{
+        return this->arp;
+    }
 }
 
