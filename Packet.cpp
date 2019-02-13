@@ -20,6 +20,8 @@ namespace shared{ Packet::Packet(char* data){
         //Construct ethernetheader
         memcpy(&ethernetHeader,this->data, ETHER_LEN);
 
+        printf("Packet Type: %d\n", ntohs(ethernetHeader.ether_type));
+
         //Check the type
         if(ntohs(ethernetHeader.ether_type) == ARP_CODE){
             //Arp stuff
