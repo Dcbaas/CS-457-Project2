@@ -86,6 +86,8 @@ int main(){
         //start processing all others
         printf("Got a %d byte packet\n", n);
 
+        printf("Here0\n");
+
         sendPacket = shared::Packet(buf);
         if(sendPacket.isARP()){
             printf("Got an ARP packet\n");

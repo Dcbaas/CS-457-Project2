@@ -1,5 +1,7 @@
 #include "Packet.h"
 
+#include <algorithm>
+
 #include <netinet/if_ether.h>
 #include <netinet/ip_icmp.h>
 #include <sys/socket.h>
@@ -12,8 +14,7 @@
 #include <netinet/ip.h>
 #include <net/ethernet.h>
 
-namespace shared{
-    Packet::Packet(char* data){
+namespace shared{ Packet::Packet(char* data){
         memcpy(this->data, data, 5000);
 
         //Construct ethernetheader
@@ -31,9 +32,20 @@ namespace shared{
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
             arp = false;
         }
-        throw 1;
+        else{
+            throw 1;
+        }
     }
     Packet::Packet(){}
+    Packet& Packet::operator=(Packet other){
+        std::swap(this->detail,other.detail);
+        std::swap(this->data, other.data);
+        std::swap(this->ethernetHeader, other.ethernetHeader);
+        std::swap(this->ipHeader, other.ipHeader);
+        std::swap(this->arp, other.arp);
+
+        return *this;
+    }
 
     bool Packet::isARP() const{
         return this->arp;
