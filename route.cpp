@@ -1,8 +1,5 @@
 #include "Packet.h"
 
-#include <netinet/ether.h>
-#include <netinet/ip.h>
-#include <net/if.h>
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
 #include <net/ethernet.h>
@@ -73,8 +70,6 @@ int main(){
     printf("Ready to recieve now\n");
     while(1){
         char buf[1500];
-	char dest[20];
-	char source[20];
         struct sockaddr_ll recvaddr;
         unsigned int recvaddrlen=sizeof(struct sockaddr_ll);
         //we can use recv, since the addresses are in the packet, but we
@@ -91,21 +86,6 @@ int main(){
         //start processing all others
         printf("Got a %d byte packet\n", n);
 	
-	//Parse ether header
-	struct ether_header eh;
-	memcpy(&eh, buf,14);
-	printf("Destination: %s\n", ether_ntoa((struct ehter_addr*)&eh.ether_dhost));
-	memcpy(source, &eh.ether_dhost,sizeof(eh.ether_dhost);
-	printf("Source: %s\n", ether_nota((struct ether_addr*)&eh.ether_shost));
-	//Make the source our destination (dest)
-	memcpy(dest, &ether_dhost, sizeof(eh.ehther_shost);
-	//check if its IPV4 then parse if it is
-	struct iphdr iph;
-	memcpy(&iph,&buf[14],20);
-	if(ntohs(eh.ether_type == 0x800){
-			printf("Destination: %s\n", intet_ntoa(*(struct in_addr*)&iph.daddr));
-			printf("Source: %s\n", inet_ntoa(*(struct in_addr*)&iph.saddr));
-	}
         printf("Here0\n");
 
         sendPacket = shared::Packet(buf);
