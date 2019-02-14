@@ -91,6 +91,8 @@ int main(){
         sendPacket = shared::Packet(buf);
         if(sendPacket.isARP()){
             printf("Got an ARP packet\n");
+            sendPacket.printARPData();
+            printf("\n\n");
         }
         else{
             printf("Got an ICMP packet\n");

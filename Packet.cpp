@@ -63,9 +63,12 @@ namespace shared{
 
     void Packet::printARPData() {
         //Print the MAC Address? 
+        struct ether_addr temp;
         for(int i = 0; i < 6; ++i){
-            printf("%x ", detail.arp.arp_sha);
+            temp.ether_addr_octet[i] = detail.arp.arp_sha[i];
         }
+        char* mac_str = ether_ntoa(&temp);
+        printf("%s\n", mac_str);
         printf("\n");
     }
 
