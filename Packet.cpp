@@ -14,8 +14,9 @@
 #include <netinet/ip.h>
 #include <net/ethernet.h>
 
-namespace shared{ Packet::Packet(char* data){
-        memcpy(this->data, data, 5000);
+namespace shared{ 
+    Packet::Packet(char* data){
+        memcpy(this->data, data, 1500);
 
         //Construct ethernetheader
         memcpy(&ethernetHeader,this->data, ETHER_LEN);
@@ -38,7 +39,9 @@ namespace shared{ Packet::Packet(char* data){
             throw 1;
         }
     }
+
     Packet::Packet(){}
+
     Packet& Packet::operator=(Packet other){
         std::swap(this->detail,other.detail);
         std::swap(this->data, other.data);
@@ -49,8 +52,24 @@ namespace shared{ Packet::Packet(char* data){
         return *this;
     }
 
+
+    //Packet Packet::constructResponseARP(const Packet& request){
+    // }
+    
+
     bool Packet::isARP() const{
         return this->arp;
     }
+
+    void Packet::printARPData() {
+        //Print the MAC Address? 
+        for(int i = 0; i < 6; ++i){
+            printf("%x ", detail.arp.arp_sha);
+        }
+        printf("\n");
+    }
+
+    //BadPacket::BadPacket(const char* file, unsigned int line, const char* function, const char* info) :
+        //file(file), line(line), function(function), info(info) {}
 }
 

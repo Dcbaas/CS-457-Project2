@@ -1,10 +1,12 @@
 #ifndef                     PACKET_H
 #define                     PACKET_H
 
+#include <exception>
 #include <netpacket/packet.h>
 #include <netinet/ether.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip_icmp.h>
+#include <string>
 
 namespace shared{
 
@@ -15,7 +17,8 @@ namespace shared{
 
     class Packet{
     public:
-        char data[5000];
+        //Won't take a constexpr below?
+        char data[1500];
         Packet(char* data);
         Packet();
         //Construct an ARP request header
@@ -24,13 +27,14 @@ namespace shared{
         //Construct an ICMP Request header
         //Packet(...);
 
-        Packet constructResponseARP(Packet& request);
-        Packet constructResponseICMP(Packet& request);
+        Packet constructResponseARP(const Packet& request);
+        Packet constructResponseICMP(const Packet& request);
         Packet& operator=(Packet other);
 
-//        ~Packet();
-        bool isARP() const;
+        void printARPData();
 
+        //        ~Packet();
+        bool isARP() const;
 
     private:
         HeaderDetail detail;
