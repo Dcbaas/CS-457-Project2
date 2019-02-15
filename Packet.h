@@ -52,6 +52,7 @@ namespace shared{
         static constexpr unsigned char IP_LEN = 20;
         static constexpr unsigned char ARP_LEN = 28;
         static constexpr unsigned char ICMP_LEN = 8;
+        static constexpr unsigned char ARP_TOTAL_LEN = 42;
 
     };
 }
