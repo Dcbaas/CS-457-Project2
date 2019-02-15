@@ -21,13 +21,13 @@ namespace shared{
         char data[1500];
         Packet(char* data);
         Packet();
-        //Construct an ARP request header
-        //Packet(...);
+        //Construct an ARP response header
+        Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request);
 
         //Construct an ICMP Request header
         //Packet(...);
 
-        bool constructResponseARP(struct ifaddrs* interfaceList);
+        Packet constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP(const Packet& request);
         Packet& operator=(Packet other);
 
@@ -41,6 +41,9 @@ namespace shared{
         struct ether_header ethernetHeader;
         struct iphdr ipHeader;
         bool arp{false};
+
+        void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
+        void transferIP(uint8_t* responseIP, uint8_t* requestIP);
 
         bool equalIPs(uint8_t* rhs, uint8_t* lhs);
         static constexpr unsigned long ARP_CODE = 0x0806;

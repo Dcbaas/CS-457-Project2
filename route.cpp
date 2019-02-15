@@ -92,14 +92,8 @@ int main(){
         if(recivePacket.isARP()){
             printf("Got an ARP packet\n");
 //            sendPacket.printARPData();
-            bool foundMatch = recivePacket.constructResponseARP(ifaddr);
-
-            if(foundMatch){
-                printf("Found needed MAC\n");
-            }
-            else{
-                printf("Didn't Find MAC\n");
-            }
+            sendPacket = recivePacket.constructResponseARP(ifaddr);
+            send(packet_socket, sendPacket.data, 1500, 0);
         }
         else{
             printf("Got an ICMP packet\n");

@@ -44,6 +44,33 @@ namespace shared{
 
     Packet::Packet(){}
 
+    Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request){
+        struct arphdr* requestEthHeader = &request.detail.arp.ea_hdr;
+
+        detail.arp.ea_hdr.ar_hrd = requestEthHeader->ar_hrd; 
+        detail.arp.ea_hdr.ar_pro = requestEthHeader->ar_pro;
+        detail.arp.ea_hdr.ar_hln = requestEthHeader->ar_hln;
+        detail.arp.ea_hdr.ar_pln = requestEthHeader->ar_pln;
+        detail.arp.ea_hdr.ar_op = ARPOP_REPLY;
+
+
+        printf("Arp Response Construction Check: ");
+        memcpy(detail.arp.arp_sha, senderMAC, 6);
+        memcpy(detail.arp.arp_spa, senderIP, 4);
+        memcpy(detail.arp.arp_sha, targetMAC, 6);
+        memcpy(detail.arp.arp_spa, targetIP, 4);
+        printf("Success\n");
+
+        //        detail.arp.arp_sha = sendMAC;
+        //        detail.arp.arp_spa = senderIP;
+        //detail.arp.arp_tha = targetMAC;
+        //detail.arp.arp_tpa = targetIP;
+        //detail.arp = {{requestEthHeader->ar_hrd, requestEthHeader->ar_pro, requestEthHeader->ar_hln,
+        //requestEthHeader->ar_pln, ARPOP_REPLY},senderIP, senderMAC, targetIP, targetMAC};
+
+        arp = true;        
+    }
+
     Packet& Packet::operator=(Packet other){
         std::swap(this->detail,other.detail);
         std::swap(this->data, other.data);
@@ -55,7 +82,7 @@ namespace shared{
     }
 
 
-    bool Packet::constructResponseARP(struct ifaddrs* interfaceList){
+    Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
         //Remember that IPs only have 4 elements while MAC addresses have 6
         //The target IP we have and the MAC we are looking for.
         //TODO maybe typedef this to make it easier to read.
@@ -63,14 +90,14 @@ namespace shared{
         memcpy(&targetIP, detail.arp.arp_tpa, 4);
 
         uint8_t* targetMAC;
-        
+
         uint8_t* senderIP = detail.arp.arp_spa;
         uint8_t* senderMAC = detail.arp.arp_sha;
-        
+
         char* targetInterface;
         struct ifaddrs* temp;
         struct ifaddrs* temp2;
-    
+
         //Find the interface for the matching ip. 
         for(temp = interfaceList; temp != NULL; temp = temp->ifa_next){
             if(temp->ifa_addr->sa_family == AF_INET){
@@ -87,9 +114,11 @@ namespace shared{
                                 temp2->ifa_addr->sa_family == AF_PACKET){
                             struct sockaddr_ll* targetMatch = (struct sockaddr_ll*)(temp->ifa_addr);
                             targetMAC = targetMatch->sll_addr;
-                            
+
+
+                            Packet response(detail.arp.arp_tpa, targetMAC, senderIP, senderMAC, *this);
                             //Temp test
-                            return true;
+                            return response;
                             //Construct the response packet
                             //Target becomes the sender and the sender becomes the target.
                         }
@@ -98,7 +127,7 @@ namespace shared{
                 }
             }
         }
-        return false;
+        throw 2;
     }
 
 
@@ -127,7 +156,16 @@ namespace shared{
         return true;
     }
 
-    //BadPacket::BadPacket(const char* file, unsigned int line, const char* function, const char* info) :
-    //file(file), line(line), function(function), info(info) {}
+    void Packet::transferMAC(uint8_t* responseMAC, uint8_t* requestMAC){
+        for(int octet = 0; octet < 6; ++octet){
+            responseMAC[octet] = requestMAC[octet];
+        }
+    }
+
+    void Packet::transferIP(uint8_t* responseIP, uint8_t* requestIP){
+        for(int octet = 0; octet < 4; ++octet){
+            responseIP[octet] = requestIP[octet];
+        }
+    }
 }
 
