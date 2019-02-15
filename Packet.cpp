@@ -1,7 +1,9 @@
 #include "Packet.h"
 
+#include <memory>
 #include <algorithm>
 
+#include<ifaddrs.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip_icmp.h>
 #include <sys/socket.h>
@@ -53,9 +55,52 @@ namespace shared{
     }
 
 
-    //Packet Packet::constructResponseARP(const Packet& request){
-    // }
+    auto Packet::constructResponseARP(const Packet& request, struct ifaddrs* interfaceList){
+        //Remember that IPs only have 4 elements while MAC addresses have 6
+        //The target IP we have and the MAC we are looking for.
+        //TODO maybe typedef this to make it easier to read.
+        uint32_t targetIP;
+        memcpy(&targetIP, detail.arp.arp_tpa, 4);
+
+        uint8_t* targetMAC;
+        
+        uint8_t* senderIP = detail.arp.arp_spa;
+        uint8_t* senderMAC = detail.arp.arp_sha;
+        
+        char* targetInterface;
+        struct ifaddrs* temp;
+        struct ifaddrs* temp2;
     
+        //Find the interface for the matching ip. 
+        for(temp = interfaceList; temp != NULL; temp = temp->ifa_next){
+            if(temp->ifa_addr->sa_family == AF_INET){
+                //Cant be cast as a static cast
+                struct sockaddr_in* foundIP = (struct sockaddr_in*) (temp->ifa_addr);
+                //We found the matching ip get the interface name.
+                if(foundIP->sin_addr.s_addr == targetIP){
+                    targetInterface = temp->ifa_name;
+
+                    //Find the matching MAC address 
+                    for(temp2 = interfaceList; temp2 != NULL; temp2 = temp2->ifa_next){
+                        //We found the MAC address of the interface we need.
+                        if(strcmp(temp2->ifa_name, targetInterface) == 0 && 
+                                temp2->ifa_addr->sa_family == AF_PACKET){
+                            struct sockaddr_ll* targetMatch = (struct sockaddr_ll*)(temp->ifa_addr);
+                            targetMAC = targetMatch->sll_addr;
+                            
+                            //Temp test
+                            return true;
+                            //Construct the response packet
+                            //Target becomes the sender and the sender becomes the target.
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+        return false;
+    }
+
 
     bool Packet::isARP() const{
         return this->arp;
@@ -72,7 +117,17 @@ namespace shared{
         printf("\n");
     }
 
+    //DEPRICATED
+    bool Packet::equalIPs(uint8_t* rhs, uint8_t* lhs){
+        for(int octet = 0; octet < 4; ++octet){
+            if(rhs[octet] != lhs[octet]){
+                return false;
+            }
+        }
+        return true;
+    }
+
     //BadPacket::BadPacket(const char* file, unsigned int line, const char* function, const char* info) :
-        //file(file), line(line), function(function), info(info) {}
+    //file(file), line(line), function(function), info(info) {}
 }
 

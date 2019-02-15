@@ -1,7 +1,7 @@
 #ifndef                     PACKET_H
 #define                     PACKET_H
 
-#include <exception>
+#include <ifaddrs.h>
 #include <netpacket/packet.h>
 #include <netinet/ether.h>
 #include <netinet/if_ether.h>
@@ -27,7 +27,7 @@ namespace shared{
         //Construct an ICMP Request header
         //Packet(...);
 
-        Packet constructResponseARP(const Packet& request);
+        auto constructResponseARP(const Packet& request, struct ifaddrs* interfaceList);
         Packet constructResponseICMP(const Packet& request);
         Packet& operator=(Packet other);
 
@@ -41,6 +41,8 @@ namespace shared{
         struct ether_header ethernetHeader;
         struct iphdr ipHeader;
         bool arp{false};
+
+        bool equalIPs(uint8_t* rhs, uint8_t* lhs);
         static constexpr unsigned long ARP_CODE = 0x0806;
         static constexpr unsigned long ICMP_CODE = 0x0800;
         static constexpr unsigned char ETHER_LEN = 14;
