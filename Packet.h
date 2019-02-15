@@ -27,7 +27,7 @@ namespace shared{
         //Construct an ICMP Request header
         //Packet(...);
 
-        auto constructResponseARP(const Packet& request, struct ifaddrs* interfaceList);
+        bool constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP(const Packet& request);
         Packet& operator=(Packet other);
 

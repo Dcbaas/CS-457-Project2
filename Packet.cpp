@@ -55,7 +55,7 @@ namespace shared{
     }
 
 
-    auto Packet::constructResponseARP(const Packet& request, struct ifaddrs* interfaceList){
+    bool Packet::constructResponseARP(struct ifaddrs* interfaceList){
         //Remember that IPs only have 4 elements while MAC addresses have 6
         //The target IP we have and the MAC we are looking for.
         //TODO maybe typedef this to make it easier to read.

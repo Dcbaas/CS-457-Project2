@@ -88,11 +88,18 @@ int main(){
 	
         printf("Here0\n");
 
-        sendPacket = shared::Packet(buf);
-        if(sendPacket.isARP()){
+        recivePacket = shared::Packet(buf);
+        if(recivePacket.isARP()){
             printf("Got an ARP packet\n");
-            sendPacket.printARPData();
-            printf("\n\n");
+//            sendPacket.printARPData();
+            bool foundMatch = recivePacket.constructResponseARP(ifaddr);
+
+            if(foundMatch){
+                printf("Found needed MAC\n");
+            }
+            else{
+                printf("Didn't Find MAC\n");
+            }
         }
         else{
             printf("Got an ICMP packet\n");
