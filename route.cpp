@@ -93,7 +93,7 @@ int main(){
             printf("Got an ARP packet\n");
 //            sendPacket.printARPData();
             sendPacket = recivePacket.constructResponseARP(ifaddr);
-            send(packet_socket, sendPacket.data, 1500, 0);
+            send(packet_socket, sendPacket.data, 42, 0);
         }
         else{
             printf("Got an ICMP packet\n");

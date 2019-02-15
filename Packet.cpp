@@ -51,14 +51,14 @@ namespace shared{
         detail.arp.ea_hdr.ar_pro = requestEthHeader->ar_pro;
         detail.arp.ea_hdr.ar_hln = requestEthHeader->ar_hln;
         detail.arp.ea_hdr.ar_pln = requestEthHeader->ar_pln;
-        detail.arp.ea_hdr.ar_op = ARPOP_REPLY;
+        detail.arp.ea_hdr.ar_op = htons(ARPOP_REPLY);
 
 
         printf("Arp Response Construction Check: ");
         memcpy(detail.arp.arp_sha, senderMAC, 6);
         memcpy(detail.arp.arp_spa, senderIP, 4);
-        memcpy(detail.arp.arp_sha, targetMAC, 6);
-        memcpy(detail.arp.arp_spa, targetIP, 4);
+        memcpy(detail.arp.arp_tha, targetMAC, 6);
+        memcpy(detail.arp.arp_tpa, targetIP, 4);
         printf("Success\n");
 
         arp = true;        
@@ -72,12 +72,12 @@ namespace shared{
         memcpy(ethernetHeader.ether_shost, senderMAC, 6);
 
         //Type
-        ethernetHeader.ether_type = ARPOP_REPLY;
+        ethernetHeader.ether_type = htons(0x0806);
 
 
         //Copy the data to the data array
         memcpy(this->data, &ethernetHeader, ETHER_LEN);
-        memcpy(this->data, &detail.arp, ARP_LEN);
+        memcpy(&this->data[ETHER_LEN], &detail.arp, ARP_LEN);
 
     }
 
@@ -116,6 +116,7 @@ namespace shared{
                 //We found the matching ip get the interface name.
                 if(foundIP->sin_addr.s_addr == targetIP){
                     targetInterface = temp->ifa_name;
+                    printf("Interface Name: %s\n", targetInterface);
 
                     //Find the matching MAC address 
                     for(temp2 = interfaceList; temp2 != NULL; temp2 = temp2->ifa_next){
