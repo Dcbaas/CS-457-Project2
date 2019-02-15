@@ -61,14 +61,24 @@ namespace shared{
         memcpy(detail.arp.arp_spa, targetIP, 4);
         printf("Success\n");
 
-        //        detail.arp.arp_sha = sendMAC;
-        //        detail.arp.arp_spa = senderIP;
-        //detail.arp.arp_tha = targetMAC;
-        //detail.arp.arp_tpa = targetIP;
-        //detail.arp = {{requestEthHeader->ar_hrd, requestEthHeader->ar_pro, requestEthHeader->ar_hln,
-        //requestEthHeader->ar_pln, ARPOP_REPLY},senderIP, senderMAC, targetIP, targetMAC};
-
         arp = true;        
+
+
+        //Construct the ethernet header
+        //Destination
+        memcpy(ethernetHeader.ether_dhost, request.ethernetHeader.ether_shost, 6);
+        
+        //Host
+        memcpy(ethernetHeader.ether_shost, senderMAC, 6);
+
+        //Type
+        ethernetHeader.ether_type = ARPOP_REPLY;
+
+
+        //Copy the data to the data array
+        memcpy(this->data, &ethernetHeader, ETHER_LEN);
+        memcpy(this->data, &detail.arp, ARP_LEN);
+
     }
 
     Packet& Packet::operator=(Packet other){
