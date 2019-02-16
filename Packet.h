@@ -19,13 +19,19 @@ namespace shared{
     public:
         //Won't take a constexpr below?
         char data[1500];
+
+        //Standard Constructor to parse a packet
         Packet(char* data);
+
+        //Default constructor
         Packet();
+
         //Construct an ARP response header
         Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request);
 
-        //Construct an ICMP Request header
-        //Packet(...);
+        //Construct an ICMP response header 
+        Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, struct icmphdr& icmpResponse);
+
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP(const Packet& request);
@@ -44,6 +50,8 @@ namespace shared{
 
         void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
         void transferIP(uint8_t* responseIP, uint8_t* requestIP);
+
+        struct iphdr constructIPResponseHdr();
 
         bool equalIPs(uint8_t* rhs, uint8_t* lhs);
         static constexpr unsigned long ARP_CODE = 0x0806;

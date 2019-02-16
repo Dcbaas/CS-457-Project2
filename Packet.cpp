@@ -81,6 +81,18 @@ namespace shared{
 
     }
 
+    Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
+            struct icmphdr& icmpResponse){
+        memcpy(this->data, &etherResponse, ETHER_LEN);
+        memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
+        memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
+
+        this->ethernetHeader = etherResponse;
+        this->ipHeader = ipResponse;
+        this->detail.icmp = icmpResponse;
+        this->arp = false;
+    }
+
     Packet& Packet::operator=(Packet other){
         std::swap(this->detail,other.detail);
         std::swap(this->data, other.data);
@@ -146,6 +158,29 @@ namespace shared{
         throw 2;
     }
 
+    Packet Packet::constructResponseICMP(const Packet& request){
+        //Create the response ethernet header
+        //TODO make this memcpy for all instances. 
+        struct ether_header responseEther = {ethernetHeader.ether_shost, ethernetHeader.ether_dhost, 
+            ethernetHeader.ether_type};
+
+        //Construct the response IP 
+        struct iphdr responseIP = constructIPResponseHdr();
+
+        struct icmphdr responseICMP;
+        responseICMP.type = 0;
+        responseICMP.code = 0;
+        //Change this later.
+        responseICMP.checksum = detail.icmp.checksum;
+        responseICMP.un.echo.id = detail.icmp.un.echo.id;
+        responseICMP.un.echo.sequence = detail.icmp.un.echo.sequence;
+
+        Packet reply(responseEther, responseIP, responseICMP);
+
+
+        return reply;
+    }
+
 
     bool Packet::isARP() const{
         return this->arp;
@@ -182,6 +217,23 @@ namespace shared{
         for(int octet = 0; octet < 4; ++octet){
             responseIP[octet] = requestIP[octet];
         }
+    }
+
+    struct iphdr Packet::constructIPResponseHdr(){
+        //Construct the response IP 
+        struct iphdr responseIP;
+        responseIP.tos = ipHeader.tos;
+        responseIP.tot_len = ipHeader.tot_len;
+        responseIP.id = ipHeader.id;
+        responseIP.frag_off; ipHeader.frag_off;
+        responseIP.ttl = 64;
+        responseIP.protocol = ipHeader.protocol;
+        //Is the check right?
+        responseIP.check = ipHeader.check;
+        responseIP.saddr = ipHeader.daddr;
+        responseIP.daddr = ipHeader.saddr;
+
+        return responseIP;
     }
 }
 
