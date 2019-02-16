@@ -123,8 +123,13 @@ namespace shared{
                         //We found the MAC address of the interface we need.
                         if(strcmp(temp2->ifa_name, targetInterface) == 0 && 
                                 temp2->ifa_addr->sa_family == AF_PACKET){
-                            struct sockaddr_ll* targetMatch = (struct sockaddr_ll*)(temp->ifa_addr);
+                            struct sockaddr_ll* targetMatch = (struct sockaddr_ll*)(temp2->ifa_addr);
                             targetMAC = targetMatch->sll_addr;
+
+                            for(int i = 0; i < 6; ++i){
+                                printf("%d ", targetMAC[i]);
+                            }
+                            printf("\n");
 
 
                             Packet response(detail.arp.arp_tpa, targetMAC, senderIP, senderMAC, *this);
