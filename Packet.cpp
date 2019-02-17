@@ -44,7 +44,8 @@ namespace shared{
 
     Packet::Packet(){}
 
-    Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request){
+    Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, 
+            uint8_t* targetMAC, Packet& request){
         struct arphdr* requestEthHeader = &request.detail.arp.ea_hdr;
 
         detail.arp.ea_hdr.ar_hrd = requestEthHeader->ar_hrd; 
@@ -135,7 +136,8 @@ namespace shared{
                         //We found the MAC address of the interface we need.
                         if(strcmp(temp2->ifa_name, targetInterface) == 0 && 
                                 temp2->ifa_addr->sa_family == AF_PACKET){
-                            struct sockaddr_ll* targetMatch = (struct sockaddr_ll*)(temp2->ifa_addr);
+                            struct sockaddr_ll* targetMatch = 
+                                (struct sockaddr_ll*)(temp2->ifa_addr);
                             targetMAC = targetMatch->sll_addr;
 
                             for(int i = 0; i < 6; ++i){
@@ -144,7 +146,8 @@ namespace shared{
                             printf("\n");
 
 
-                            Packet response(detail.arp.arp_tpa, targetMAC, senderIP, senderMAC, *this);
+                            Packet response(detail.arp.arp_tpa, targetMAC, senderIP, senderMAC, 
+                                    *this);
                             //Temp test
                             return response;
                             //Construct the response packet
@@ -161,8 +164,17 @@ namespace shared{
     Packet Packet::constructResponseICMP(const Packet& request){
         //Create the response ethernet header
         //TODO make this memcpy for all instances. 
-        struct ether_header responseEther = {ethernetHeader.ether_shost, ethernetHeader.ether_dhost, 
-            ethernetHeader.ether_type};
+        struct ether_header responseEther;
+            //= {ethernetHeader.ether_shost, ethernetHeader.ether_dhost, 
+            //ethernetHeader.ether_type};
+
+        memcpy(&responseEther.ether_dhost, &ethernetHeader.ether_shost, 
+                sizeof (ethernetHeader.ether_shost));
+        memcpy(&responseEther.ether_shost, &ethernetHeader.ether_dhost, 
+                sizeof(ethernetHeader.ether_dhost));
+
+        memcpy(&responseEther.ether_type, &ethernetHeader.ether_type, 
+                sizeof(ethernetHeader.ether_type));
 
         //Construct the response IP 
         struct iphdr responseIP = constructIPResponseHdr();
