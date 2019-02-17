@@ -34,7 +34,7 @@ namespace shared{
 
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
-        Packet constructResponseICMP(const Packet& request);
+        Packet constructResponseICMP();
         Packet& operator=(Packet other);
 
         void printARPData();

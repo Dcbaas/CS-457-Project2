@@ -161,7 +161,7 @@ namespace shared{
         throw 2;
     }
 
-    Packet Packet::constructResponseICMP(const Packet& request){
+    Packet Packet::constructResponseICMP(){
         //Create the response ethernet header
         //TODO make this memcpy for all instances. 
         struct ether_header responseEther;
