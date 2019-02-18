@@ -187,6 +187,8 @@ namespace shared{
         responseICMP.un.echo.id = detail.icmp.un.echo.id;
         responseICMP.un.echo.sequence = detail.icmp.un.echo.sequence;
 
+        printf("%d\n", detail.icmp.un.echo.id);
+
         Packet reply(responseEther, responseIP, responseICMP);
 
 
