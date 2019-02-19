@@ -97,6 +97,8 @@ int main(){
         }
         else{
             printf("Got an ICMP packet\n");
+            sendPacket = recivePacket.constructResponseICMP();
+            send(packet_socket, sendPacket.data, 98, 0);
         }
 
         //what else to do is up to you, you can send packets with send,
