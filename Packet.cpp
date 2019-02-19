@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <algorithm>
+#include <vector>
 
 #include<ifaddrs.h>
 #include <netinet/if_ether.h>
@@ -68,7 +69,7 @@ namespace shared{
         //Construct the ethernet header
         //Destination
         memcpy(ethernetHeader.ether_dhost, request.ethernetHeader.ether_shost, 6);
-        
+
         //Host
         memcpy(ethernetHeader.ether_shost, senderMAC, 6);
 
@@ -83,15 +84,21 @@ namespace shared{
     }
 
     Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
-            struct icmphdr& icmpResponse){
+            struct icmphdr& icmpResponse, char* icmpData, char size){
         memcpy(this->data, &etherResponse, ETHER_LEN);
         memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
         memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
+        //THIS IS NOT WORKING 
+        printf("size: %d\n", size);
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
 
+        printf("%d\n", icmpResponse.un.echo.id);
         this->ethernetHeader = etherResponse;
         this->ipHeader = ipResponse;
         this->detail.icmp = icmpResponse;
         this->arp = false;
+
+        //        delete[] icmpData;
     }
 
     Packet& Packet::operator=(Packet other){
@@ -140,10 +147,10 @@ namespace shared{
                                 (struct sockaddr_ll*)(temp2->ifa_addr);
                             targetMAC = targetMatch->sll_addr;
 
-                            for(int i = 0; i < 6; ++i){
-                                printf("%d ", targetMAC[i]);
-                            }
-                            printf("\n");
+                            //for(int i = 0; i < 6; ++i){
+                            //printf("%d ", targetMAC[i]);
+                            //}
+                            //printf("\n");
 
 
                             Packet response(detail.arp.arp_tpa, targetMAC, senderIP, senderMAC, 
@@ -165,8 +172,8 @@ namespace shared{
         //Create the response ethernet header
         //TODO make this memcpy for all instances. 
         struct ether_header responseEther;
-            //= {ethernetHeader.ether_shost, ethernetHeader.ether_dhost, 
-            //ethernetHeader.ether_type};
+        //= {ethernetHeader.ether_shost, ethernetHeader.ether_dhost, 
+        //ethernetHeader.ether_type};
 
         memcpy(&responseEther.ether_dhost, &ethernetHeader.ether_shost, 
                 sizeof (ethernetHeader.ether_shost));
@@ -188,8 +195,20 @@ namespace shared{
         responseICMP.un.echo.sequence = detail.icmp.un.echo.sequence;
 
         printf("%d\n", detail.icmp.un.echo.id);
+        printf("%d\n", responseICMP.un.echo.id);
 
-        Packet reply(responseEther, responseIP, responseICMP);
+
+        //Find the size of the data
+        int dataSize = ntohs(ipHeader.tot_len) - (IP_LEN + ICMP_LEN);
+//        int dataSize = 98- ICMP_LEN - IP_LEN - ETHER_LEN;
+        printf("tot_len: %d\n", ntohs(ipHeader.tot_len)); 
+
+        printf("allocation\n");
+        //        char* icmpData = new char[dataSize];
+
+        //memcpy(icmpData, &this->data[ETHER_LEN + IP_LEN + ICMP_LEN], dataSize);
+
+        Packet reply(responseEther, responseIP, responseICMP, this->data, dataSize);
 
 
         return reply;
@@ -236,10 +255,12 @@ namespace shared{
     struct iphdr Packet::constructIPResponseHdr(){
         //Construct the response IP 
         struct iphdr responseIP;
+        responseIP.ihl = 5; 
+        responseIP.version = 4;
         responseIP.tos = ipHeader.tos;
         responseIP.tot_len = ipHeader.tot_len;
         responseIP.id = ipHeader.id;
-        responseIP.frag_off; ipHeader.frag_off;
+        responseIP.frag_off = ipHeader.frag_off;
         responseIP.ttl = 64;
         responseIP.protocol = ipHeader.protocol;
         //Is the check right?
@@ -249,5 +270,7 @@ namespace shared{
 
         return responseIP;
     }
+
+
 }
 

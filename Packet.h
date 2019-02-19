@@ -30,7 +30,7 @@ namespace shared{
         Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request);
 
         //Construct an ICMP response header 
-        Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, struct icmphdr& icmpResponse);
+        Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, struct icmphdr& icmpResponse, char* icmpData, char size);
 
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
