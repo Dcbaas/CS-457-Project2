@@ -72,31 +72,42 @@ int main(){
         char buf[1500];
         struct sockaddr_ll recvaddr;
         unsigned int recvaddrlen=sizeof(struct sockaddr_ll);
-        //we can use recv, since the addresses are in the packet, but we
-        //use recvfrom because it gives us an easy way to determine if
-        //this packet is incoming or outgoing (when using ETH_P_ALL, we
-        //see packets in both directions. Only outgoing can be seen when
-        //using a packet socket with some specific protocol)
-        int n = recvfrom(packet_socket, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
-        //ignore outgoing packets (we can't disable some from being sent
-        //by the OS automatically, for example ICMP port unreachable
-        //messages, so we will just ignore them here)
-        if(recvaddr.sll_pkttype==PACKET_OUTGOING)
-            continue;
-        //start processing all others
-        printf("Got a %d byte packet\n", n);
-        
-        recivePacket = shared::Packet(buf);
-        if(recivePacket.isARP()){
-            printf("Got an ARP packet\n");
-//            sendPacket.printARPData();
-            sendPacket = recivePacket.constructResponseARP(ifaddr);
-            send(packet_socket, sendPacket.data, 42, 0);
+        try{
+            //we can use recv, since the addresses are in the packet, but we
+            //use recvfrom because it gives us an easy way to determine if
+            //this packet is incoming or outgoing (when using ETH_P_ALL, we
+            //see packets in both directions. Only outgoing can be seen when
+            //using a packet socket with some specific protocol)
+            int n = recvfrom(packet_socket, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
+            //ignore outgoing packets (we can't disable some from being sent
+            //by the OS automatically, for example ICMP port unreachable
+            //messages, so we will just ignore them here)
+            if(recvaddr.sll_pkttype==PACKET_OUTGOING)
+                continue;
+            //start processing all others
+            printf("Got a %d byte packet\n", n);
+
+            recivePacket = shared::Packet(buf);
+            if(recivePacket.isARP()){
+                printf("Got an ARP packet\n");
+                //            sendPacket.printARPData();
+                sendPacket = recivePacket.constructResponseARP(ifaddr);
+                send(packet_socket, sendPacket.data, 42, 0);
+            }
+            else{
+                printf("Got an ICMP packet\n");
+                sendPacket = recivePacket.constructResponseICMP();
+                send(packet_socket, sendPacket.data, 98, 0);
+            }
         }
-        else{
-            printf("Got an ICMP packet\n");
-            sendPacket = recivePacket.constructResponseICMP();
-            send(packet_socket, sendPacket.data, 98, 0);
+        catch(int e){
+            if(e == 1){
+
+                printf("Bad packet was recived and ignored\n");
+            }
+            else if(e == 2){
+                printf("Interface was not found for response\n");
+            }
         }
 
         //what else to do is up to you, you can send packets with send,

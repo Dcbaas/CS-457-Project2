@@ -6,6 +6,7 @@
 #include <netinet/ether.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip_icmp.h>
+#include <exception>
 #include <string>
 
 namespace shared{
@@ -62,6 +63,18 @@ namespace shared{
         static constexpr unsigned char ICMP_LEN = 8;
         static constexpr unsigned char ARP_TOTAL_LEN = 42;
 
+    };
+
+
+
+    class BadARP: public std::exception{
+    public:
+        BadARP(const char* msg, const char* file_, int line_, const char* func_, const char* info_ = "");
+    private:
+        const char* file;
+        int line;
+        const char* func;
+        const char* info;
     };
 }
 
