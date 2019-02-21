@@ -105,7 +105,7 @@ int main(){
                 sendPacket = recivePacket.constructResponseARP(ifaddr);
                 send(packet_socket, sendPacket.data, 42, 0);
             }
-            else{
+            else if(recivePacket.isICMP()){
                 printf("Got an ICMP packet\n");
                 sendPacket = recivePacket.constructResponseICMP();
                 send(packet_socket, sendPacket.data, 98, 0);

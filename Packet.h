@@ -42,12 +42,14 @@ namespace shared{
 
         //        ~Packet();
         bool isARP() const;
+        bool isICMP()const;
 
     private:
         HeaderDetail detail;
         struct ether_header ethernetHeader;
         struct iphdr ipHeader;
         bool arp{false};
+        bool icmp{false};
 
         void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
         void transferIP(uint8_t* responseIP, uint8_t* requestIP);

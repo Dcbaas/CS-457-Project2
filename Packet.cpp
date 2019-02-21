@@ -192,6 +192,10 @@ namespace shared{
         return this->arp;
     }
 
+    bool Packet::isICMP() const{
+        return this->icmp;
+    }
+
     void Packet::printARPData() {
         //Print the MAC Address? 
         struct ether_addr temp;
