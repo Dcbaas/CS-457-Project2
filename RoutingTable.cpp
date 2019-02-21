@@ -1,29 +1,27 @@
 #include "RoutingTable.h"
 
 #include <boost/algorithm/string.hpp>
+#include <exception>
 #include <fstream>
 #include <sstream>
-#include <array>
 #include <string>
 #include <map>
-#include <tuple>
 #include <vector>
 
 namespace shared{
     RoutingTable::RoutingTable(std::string filename){
-        std::ifstream table(filename);
+        std::ifstream tableFile;
+        tableFile.open(filename);
 
-        if(!table){
-            throw 5;
+        if(!tableFile){
+            throw 15;
         }
+
+        std::vector<std::string> split;
         std::string line;
 
-        while(std::getline(table, line)){
-            std::vector<std::string> splitData;
-
-            boost::algorithm::split(splitData, line, boost::is_space);
-
-
+        while(std::getline(line, tableFile)){
+            boost::algorithm::split(split, line, boost::is_space());
         }
     }
 }
