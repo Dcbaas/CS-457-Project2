@@ -6,16 +6,23 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/select.h>
 #include <ifaddrs.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <vector>
 
+
+typedef int SocketFD;
 int main(){
     //Define 2 Packet objects one for reciving, the other for sending.
     shared::Packet sendPacket;
     shared::Packet recivePacket;
+    std::vector<SocketFD> sockets;
+    fd_set socketSetMaster;
 
-    int packet_socket;
+
+    SocketFD packet_socket;
     //get list of interface addresses. This is a linked list. Next
     //pointer is in ifa_next, interface name is in ifa_name, address is
     //in ifa_addr. You will have multiple entries in the list with the
@@ -30,6 +37,7 @@ int main(){
     }
     //have the list, loop over the list
     for(tmp = ifaddr; tmp!=NULL; tmp=tmp->ifa_next){
+        packet_socket == 0;
         //Check if this is a packet address, there will be one per
         //interface.  There are IPv4 and IPv6 as well, but we don't care
         //about those for the purpose of enumerating interfaces. We can
@@ -37,30 +45,32 @@ int main(){
         //of our own IP addresses
         if(tmp->ifa_addr->sa_family==AF_PACKET){
             printf("Interface: %s\n",tmp->ifa_name);
-            //create a packet socket on interface r?-eth1
-            if(!strncmp(&(tmp->ifa_name[3]),"eth1",4)){
-                printf("Creating Socket on interface %s\n",tmp->ifa_name);
-                //create a packet socket
-                //AF_PACKET makes it a packet socket
-                //SOCK_RAW makes it so we get the entire packet
-                //could also use SOCK_DGRAM to cut off link layer header
-                //ETH_P_ALL indicates we want all (upper layer) protocols
-                //we could specify just a specific one
-                packet_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-                if(packet_socket<0){
-                    perror("socket");
-                    return 2;
-                }
-                //Bind the socket to the address, so we only get packets
-                //recieved on this specific interface. For packet sockets, the
-                //address structure is a struct sockaddr_ll (see the man page
-                //for "packet"), but of course bind takes a struct sockaddr.
-                //Here, we can use the sockaddr we got from getifaddrs (which
-                //we could convert to sockaddr_ll if we needed to)
-                if(bind(packet_socket,tmp->ifa_addr,sizeof(struct sockaddr_ll))==-1){
-                    perror("bind");
-                }
+            printf("Creating Socket on interface %s\n",tmp->ifa_name);
+            //create a packet socket
+            //AF_PACKET makes it a packet socket
+            //SOCK_RAW makes it so we get the entire packet
+            //could also use SOCK_DGRAM to cut off link layer header
+            //ETH_P_ALL indicates we want all (upper layer) protocols
+            //we could specify just a specific one
+            packet_socket = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+
+            if(packet_socket<0){
+                perror("socket");
+                return 2;
             }
+            //Bind the socket to the address, so we only get packets
+            //recieved on this specific interface. For packet sockets, the
+            //address structure is a struct sockaddr_ll (see the man page
+            //for "packet"), but of course bind takes a struct sockaddr.
+            //Here, we can use the sockaddr we got from getifaddrs (which
+            //we could convert to sockaddr_ll if we needed to)
+            if(bind(packet_socket,tmp->ifa_addr,sizeof(struct sockaddr_ll))==-1){
+                perror("bind");
+            }
+            
+            //Push the new socket to the vector and put it onto the fd_set data stack.
+            sockets.push_back(packet_socket);
+            FD_SET(sockets.back(), &socketSetMaster);
         }
     }
     //loop and recieve packets. We are only looking at one interface,
@@ -69,6 +79,7 @@ int main(){
     //see which ones have data)
     printf("Ready to recieve now\n");
     while(1){
+        int packet_socket = sockets.front();
         char buf[1500];
         struct sockaddr_ll recvaddr;
         unsigned int recvaddrlen=sizeof(struct sockaddr_ll);
