@@ -30,13 +30,13 @@ namespace shared{
         if(ntohs(ethernetHeader.ether_type) == ARP_CODE){
             //Arp stuff
             memcpy(&detail.arp, &data[ETHER_LEN], ARP_LEN);
-            arp = true;
+            packetType = ARP;
         }
         else if(ntohs(ethernetHeader.ether_type) == ICMP_CODE){
             //ICMP stuff
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
-            arp = false;
+            packetType = ICMP;
         }
         else{
             throw 1;
@@ -61,8 +61,7 @@ namespace shared{
         memcpy(detail.arp.arp_tha, targetMAC, 6);
         memcpy(detail.arp.arp_tpa, targetIP, 4);
 
-        arp = true;        
-
+        packetType = ARP;
 
         //Construct the ethernet header
         //Destination
@@ -92,7 +91,7 @@ namespace shared{
         this->ethernetHeader = etherResponse;
         this->ipHeader = ipResponse;
         this->detail.icmp = icmpResponse;
-        this->arp = false;
+
 
     }
 
@@ -101,7 +100,7 @@ namespace shared{
         std::swap(this->data, other.data);
         std::swap(this->ethernetHeader, other.ethernetHeader);
         std::swap(this->ipHeader, other.ipHeader);
-        std::swap(this->arp, other.arp);
+        std::swap(this->packetType, other.packetType);
 
         return *this;
     }
@@ -186,16 +185,6 @@ namespace shared{
 
         return reply;
     }
-
-
-    bool Packet::isARP() const{
-        return this->arp;
-    }
-
-    bool Packet::isICMP() const{
-        return this->icmp;
-    }
-
     void Packet::printARPData() {
         //Print the MAC Address? 
         struct ether_addr temp;
@@ -245,6 +234,10 @@ namespace shared{
         responseIP.daddr = ipHeader.saddr;
 
         return responseIP;
+    }
+
+    PacketType Packet::getType() const{
+        return this->packetType;
     }
 
 

@@ -15,6 +15,12 @@ namespace shared{
         struct ether_arp arp;
         struct icmphdr icmp;
     } HeaderDetail;
+    
+    enum PacketType{
+        ARP,
+        ICMP,
+        OTHER
+    };
 
     class Packet{
     public:
@@ -41,15 +47,13 @@ namespace shared{
         void printARPData();
 
         //        ~Packet();
-        bool isARP() const;
-        bool isICMP()const;
+        PacketType getType() const;
 
     private:
         HeaderDetail detail;
         struct ether_header ethernetHeader;
         struct iphdr ipHeader;
-        bool arp{false};
-        bool icmp{false};
+        PacketType packetType;
 
         void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
         void transferIP(uint8_t* responseIP, uint8_t* requestIP);

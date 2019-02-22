@@ -105,13 +105,13 @@ int main(){
                     printf("Got a %d byte packet\n", n);
 
                     recivePacket = shared::Packet(buf);
-                    if(recivePacket.isARP()){
+                    if(recivePacket.getType() == shared::ARP){
                         printf("Got an ARP packet\n");
                         //            sendPacket.printARPData();
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
-                    else if(recivePacket.isICMP()){
+                    else if(recivePacket.getType() == shared::ICMP){
                         printf("Got an ICMP packet\n");
                         sendPacket = recivePacket.constructResponseICMP();
                         send(*socket_it, sendPacket.data, 98, 0);
