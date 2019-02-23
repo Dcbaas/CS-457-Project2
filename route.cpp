@@ -1,4 +1,5 @@
 #include "Packet.h"
+#include "RoutingTable.h"
 
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
@@ -11,16 +12,31 @@
 #include <cstring>
 #include <arpa/inet.h>
 #include <vector>
+#include <string>
 
 
 typedef int SocketFD;
-int main(){
+int main(int argc, char** argv){
     //Define 2 Packet objects one for reciving, the other for sending.
     shared::Packet sendPacket;
     shared::Packet recivePacket;
+
+    //A vector of socket file descriptors and a select set.
     std::vector<SocketFD> sockets;
     fd_set socketSetMaster;
+    std::string tableFile;
 
+
+    //Get the routing table 
+    if(argc == 2){
+        tableFile = argv[1];
+    }
+    else{
+        printf("sudo ./vrouter <routing-table-filename>\n");
+        return 1;
+    }
+
+    shared::RoutingTable routeTable(tableFile);
 
     SocketFD packet_socket;
     //get list of interface addresses. This is a linked list. Next

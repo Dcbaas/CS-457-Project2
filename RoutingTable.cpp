@@ -20,7 +20,7 @@ namespace shared{
         std::vector<std::string> split;
         std::string line;
 
-        while(std::getline(line, tableFile)){
+        while(std::getline(tableFile, line)){
             boost::algorithm::split(split, line, boost::is_space());
         }
     }
