@@ -22,6 +22,26 @@ namespace shared{
 
         while(std::getline(tableFile, line)){
             boost::algorithm::split(split, line, boost::is_space());
+            //Add the item to the list
+            routingTable.push_front(shared::RoutingItem(split[0], split[1], split[2]));
+            char* prefix = new char[4];
+            memcpy(prefix,routingTable.front().prefix, 4);
+            prefix[3] = 1;
+            homeAddrs.push_front(prefix);
         }
+    }
+
+    char* RoutingTable::findMacAddress(char* ipAddress){
+        for(auto mappingIt = macMappings.begin(); mappingIt != macMappings.end(); ++mappingIt){
+            if(shared::ipCompare(mappingIt->ipAddress, ipAddress)){
+                //return the mac address
+                return mappingIt->macAddress;
+            }
+        }
+        return NULL;
+    }
+
+    Packet RoutingTable::findMacAddress(char* ipAddress){
+
     }
 }
