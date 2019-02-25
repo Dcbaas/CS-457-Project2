@@ -1,5 +1,5 @@
-all: Packet.o route.o
-	g++ route.o Packet.o -o vrouter -std=c++11 -g
+all: Packet.o route.o RoutingItem.o RoutingTable.o MacMapping.o
+	g++ route.o Packet.o RoutingItem.o RoutingTable.o MacMapping.o -o vrouter -std=c++11 -g
 
 Packet.o: Packet.cpp
 	g++ Packet.cpp -c -std=c++11 -g
@@ -9,6 +9,12 @@ route.o: route.cpp
 
 RoutingItem.o: RoutingItem.cpp
 	g++ RoutingItem.cpp -c -std=c++11 -g
+
+RoutingTable.o: RoutingTable.cpp
+	g++ RoutingTable.cpp -c -std=c++11 -g
+
+MacMapping.o: MacMapping.cpp
+	g++ MacMapping.cpp -c -std=c++11 -g
 
 clean:
 	rm -rf *.o vrouter

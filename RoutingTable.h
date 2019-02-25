@@ -1,30 +1,33 @@
 #ifndef                         ROUTING_TABLE_H
 #define                         ROUTING_TABLE_H
 
-#include <array>
+#include "RoutingItem.h"
+#include "Packet.h"
+#include "MacMapping.h"
+
 #include <string>
-#include <map>
-#include <tuple>
+#include <forward_list>
 
 namespace shared{
-    typedef std::string InterfaceName;
-    typedef std::array<char, 4> IpAddress;
-    typedef std::array<char, 6> MacAddress;
-
-
     class RoutingTable{
     public:
         RoutingTable(std::string filename);
+        void addItem(RoutingItem item);
         char* findMacAddress(char* ipAddress);
-        char* findMacAddress(InterfaceName name);
-        void addInterface(InterfaceName name, char* prefix, int prefixLen, char* routerForward, bool isRouterForward, char* MacAddress = nullptr);
-        
+        Packet arpSearch(char* ipAddress);
+        bool isHome(char* destIp);
     private:
-        //Tuple has interface name, its ipAddress, if it towards another router, 
-        //it has the ip address of that as well and a flag to indicate it has that data. 
-        std::map<InterfaceName, std::tuple<InterfaceName, IpAddress, int, IpAddress, bool>> routingTable;
-        //Maps an Ip address to a mac address. 
-        std::map<IpAddress, MacAddress> linkLayerMap;
+        //Table of all prefixes
+//        std::map<char*, RoutingItem> table;
+        //Map mapping all IP addresses to a mac address.
+ //       std::map<char*, char*> ipMacMapping;
+        //A linked list of the routers home addresses to indicate that a message was for it.
+
+        std::forward_list<RoutingItem> routingTable;
+        std::forward_list<shared::MacMapping> macMappings;
+        std::forward_list<char*> homeAddrs;
+        
+        
     };
 }
 
