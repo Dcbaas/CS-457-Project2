@@ -41,7 +41,8 @@ namespace shared{
         return NULL;
     }
 
-    Packet RoutingTable::findMacAddress(char* ipAddress){
+    Packet RoutingTable::arpSearch(char* ipAddress){
 
-    }
+        return NULL;
+    } 
 }

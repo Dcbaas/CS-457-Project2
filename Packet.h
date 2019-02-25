@@ -69,6 +69,8 @@ namespace shared{
         static constexpr unsigned char ICMP_LEN = 8;
         static constexpr unsigned char ARP_TOTAL_LEN = 42;
 
+        static constexpr struct arphdr arpSuplement = {256, 8, 6, 4, 256};
+
     };
 
 
