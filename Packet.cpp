@@ -39,8 +39,7 @@ namespace shared{
             packetType = ICMP;
         }
         else{
-            throw 1;
-        }
+            throw 1; }
     }
 
     Packet::Packet(){}
@@ -105,6 +104,20 @@ namespace shared{
         return *this;
     }
 
+    Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
+        //Don't ask
+        detail.arp.ea_hdr.ar_hrd = 256;
+        detail.arp.ea_hdr.ar_pro = 8;
+        detail.arp.ea_hdr.ar_hln = 6;
+        detail.arp.ea_hdr.ar_pln = 4;
+        detail.arp.ea_hdr.ar_op = 256;
+
+        memcpy(detail.arp.arp_sha, senderMAC, 6);
+        memcpy(detail.arp.arp_spa, senderIP, 4);
+        memcpy(detail.arp.arp_tpa, targetIP, 4);
+
+
+    }
 
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
         //Remember that IPs only have 4 elements while MAC addresses have 6
