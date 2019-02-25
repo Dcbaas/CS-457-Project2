@@ -104,6 +104,7 @@ namespace shared{
         return *this;
     }
 
+    //IMPELEMENT
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
         //Don't ask
         detail.arp.ea_hdr.ar_hrd = 256;
@@ -112,10 +113,10 @@ namespace shared{
         detail.arp.ea_hdr.ar_pln = 4;
         detail.arp.ea_hdr.ar_op = 256;
 
-        memcpy(detail.arp.arp_sha, senderMAC, 6);
-        memcpy(detail.arp.arp_spa, senderIP, 4);
-        memcpy(detail.arp.arp_tpa, targetIP, 4);
-
+        //Todo: Implement the rest of the arp header and make a proper Ethernet header that can
+        //be used on broadcast
+        //
+        //Also be sure to copy all of the data into the data array.
 
     }
 
