@@ -94,7 +94,7 @@ int main(int argc, char** argv){
             char ipAddress[4];
             memcpy(ipAddress,&homeAddress->sin_addr.s_addr, 4);
             routeTable.addHomeAddr(ipAddress);
-            
+
         }
     }
     //loop and recieve packets. We are only looking at one interface,
@@ -129,16 +129,24 @@ int main(int argc, char** argv){
                     printf("Got a %d byte packet\n", n);
 
                     recivePacket = shared::Packet(buf);
-                    if(recivePacket.getType() == shared::ARP){
-                        printf("Got an ARP packet\n");
-                        //            sendPacket.printARPData();
-                        sendPacket = recivePacket.constructResponseARP(ifaddr);
-                        send(*socket_it, sendPacket.data, 42, 0);
+
+                    //Check if it is for us
+                    if(routeTable.isHome(recivePacket.getIPAddress())){
+                        if(recivePacket.getType() == shared::ARP){
+                            printf("Got an ARP packet\n");
+                            //            sendPacket.printARPData();
+                            sendPacket = recivePacket.constructResponseARP(ifaddr);
+                            send(*socket_it, sendPacket.data, 42, 0);
+                        }
+                        else if(recivePacket.getType() == shared::ICMP){
+                            printf("Got an ICMP packet\n");
+                            sendPacket = recivePacket.constructResponseICMP();
+                            send(*socket_it, sendPacket.data, 98, 0);
+                        }
                     }
-                    else if(recivePacket.getType() == shared::ICMP){
-                        printf("Got an ICMP packet\n");
-                        sendPacket = recivePacket.constructResponseICMP();
-                        send(*socket_it, sendPacket.data, 98, 0);
+                    //Its not for us so we look to forward it.
+                    else{
+
                     }
                 }
                 catch(int e){

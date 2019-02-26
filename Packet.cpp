@@ -254,6 +254,12 @@ namespace shared{
         return this->packetType;
     }
 
+    char* Packet::getIPAddress() const{
+        char* returnIP = new char[4];
+        memcpy(returnIP, &ipHeader.daddr, 4);
+        return returnIP;
+    }
+
 
 }
 

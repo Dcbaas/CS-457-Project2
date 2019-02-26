@@ -52,6 +52,8 @@ namespace shared{
         //        ~Packet();
         PacketType getType() const;
 
+        char* getIPAddress() const;
+
     private:
         HeaderDetail detail;
         struct ether_header ethernetHeader;

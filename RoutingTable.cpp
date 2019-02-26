@@ -45,4 +45,17 @@ namespace shared{
 
         return NULL;
     } 
+
+    bool RoutingTable::isHome(char* destIp){
+        for(auto homeIt = homeAddrs.begin(); homeIt != homeAddrs.end(); ++homeIt){
+            char* temp = *homeIt;
+            if(temp[0] == destIp[0] && temp[1] == destIp[1] && temp[2] == destIp[2] &&
+                    temp[3] == destIp[3]){
+                delete[] destIp;
+                return true;
+            }
+        }
+        delete[] destIp;
+        return false;
+    }
 }
