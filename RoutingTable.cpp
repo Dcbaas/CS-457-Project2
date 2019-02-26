@@ -28,6 +28,7 @@ namespace shared{
     }
 
     void RoutingTable::addHomeAddr(char* ipAddress){
+	printf("Adding the address: %d.%d.%d.%d\n", ipAddress[0], ipAddress[1], ipAddress[2], ipAddress[3]);
         homeAddrs.push_front(ipAddress);
     }
 
