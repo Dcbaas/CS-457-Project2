@@ -59,7 +59,7 @@ int main(int argc, char** argv){
         //about those for the purpose of enumerating interfaces. We can
         //use the AF_INET addresses in this list for example to get a list
         //of our own IP addresses
-        if(tmp->ifa_addr->sa_family==AF_PACKET){
+        if(tmp->ifa_addr->sa_family==AF_PACKET && strcmp(tmp->ifa_name, "lo") != 0){
             printf("Interface: %s\n",tmp->ifa_name);
             printf("Creating Socket on interface %s\n",tmp->ifa_name);
             //create a packet socket
@@ -87,6 +87,14 @@ int main(int argc, char** argv){
             //Push the new socket to the vector and put it onto the fd_set data stack.
             sockets.push_back(packet_socket);
             FD_SET(sockets.back(), &socketSetMaster);
+        }
+        //Add a home address if possible.
+        else if(tmp->ifa_addr->sa_family == AF_INET){
+            struct sockaddr_in* homeAddress = (struct sockaddr_in*)tmp->ifa_addr;
+            char ipAddress[4];
+            memcpy(ipAddress,&homeAddress->sin_addr.s_addr, 4);
+            routeTable.addHomeAddr(ipAddress);
+            
         }
     }
     //loop and recieve packets. We are only looking at one interface,

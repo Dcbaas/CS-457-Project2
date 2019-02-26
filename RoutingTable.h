@@ -12,7 +12,7 @@ namespace shared{
     class RoutingTable{
     public:
         RoutingTable(std::string filename);
-        void addItem(RoutingItem item);
+        void addHomeAddr(char* ipAddress);
         char* findMacAddress(char* ipAddress);
         Packet arpSearch(char* ipAddress);
         bool isHome(char* destIp);

@@ -24,11 +24,11 @@ namespace shared{
             boost::algorithm::split(split, line, boost::is_space());
             //Add the item to the list
             routingTable.push_front(shared::RoutingItem(split[0], split[1], split[2]));
-            char* prefix = new char[4];
-            memcpy(prefix,routingTable.front().prefix, 4);
-            prefix[3] = 1;
-            homeAddrs.push_front(prefix);
         }
+    }
+
+    void RoutingTable::addHomeAddr(char* ipAddress){
+        homeAddrs.push_front(ipAddress);
     }
 
     char* RoutingTable::findMacAddress(char* ipAddress){
