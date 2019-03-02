@@ -1,5 +1,4 @@
 #include "Packet.h"
-#include "RoutingTable.h"
 
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
@@ -39,7 +38,7 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    shared::RoutingTable routeTable(tableFile);
+    //    shared::RoutingTable routeTable(tableFile);
 
     SocketFD packet_socket;
     //get list of interface addresses. This is a linked list. Next
@@ -97,7 +96,6 @@ int main(int argc, char** argv){
             struct sockaddr_in* homeAddress = (struct sockaddr_in*)tmp->ifa_addr;
             char ipAddress[4];
             memcpy(ipAddress,&homeAddress->sin_addr.s_addr, 4);
-            routeTable.addHomeAddr(ipAddress);
 
         }
     }
@@ -135,49 +133,21 @@ int main(int argc, char** argv){
                     recivePacket = shared::Packet(buf);
 
                     //Check if it is for us
-                    if(routeTable.isHome(recivePacket.getIPAddress())){
-                        if(recivePacket.getType() == shared::ARP){
-                            printf("Got an ARP packet\n");
-                            //            sendPacket.printARPData();
-                            sendPacket = recivePacket.constructResponseARP(ifaddr);
-                            send(*socket_it, sendPacket.data, 42, 0);
-                        }
-                        else if(recivePacket.getType() == shared::ICMP){
-                            printf("Got an ICMP packet\n");
-                            sendPacket = recivePacket.constructResponseICMP();
-                            send(*socket_it, sendPacket.data, 98, 0);
-                        }
+                    if(recivePacket.getType() == shared::ARP){
+                        printf("Got an ARP packet\n");
+                        //            sendPacket.printARPData();
+                        sendPacket = recivePacket.constructResponseARP(ifaddr);
+                        send(*socket_it, sendPacket.data, 42, 0);
+                    }
+                    else if(recivePacket.getType() == shared::ICMP){
+                        printf("Got an ICMP packet\n");
+                        sendPacket = recivePacket.constructResponseICMP();
+                        send(*socket_it, sendPacket.data, 98, 0);
                     }
                     //Its not for us so we look to forward it.
                     else{
                         //Check if we have a mapping already
-                        char* destMac = routeTable.findMacAddress(recivePacket.getIPAddress());
                         //No mapping was found
-                        if(destMac == NULL){
-                            //Look up routing table
-                            //Prepae for an arp search
-                            std::string sendInterface = routeTable.arpSearch(recivePacket.getIPAddress());
-                            if(sendInterface != ""){
-                                auto findIt = std::find(interfaces.begin(), interfaces.end(), sendInterface);
-
-                                auto index = std::distance(interfaces.begin(), findIt);
-                                SocketFD sendSocket = sockets.at(index);
-                                char* destIP = routeTable.isRouteForward(sendInterface);
-                                if(destIP == NULL){
-                                    destIP = recivePacket.getIPAddress();
-                                }
-
-                                char* senderMAC = NULL;
-                                char* senderIP = NULL;
-                                for(tmp = ifaddr; tmp!=NULL; tmp=tmp->ifa_next){
-                                    if(tmp->ifa_name == sendInterface && tmp->ifa_addr->sa_family == AF_PACKET){
-                                        senderMAC = (struct sockaddr_ll*)tmp->ifa_addr->sll_addr;
-                                    }
-                                }
-
-                            }
-
-                        }
                     }
                 }
                 catch(int e){
