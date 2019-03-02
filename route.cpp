@@ -13,6 +13,8 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <string>
+#include <iterator>
+#include <algorithm>
 
 
 typedef int SocketFD;
@@ -23,6 +25,7 @@ int main(int argc, char** argv){
 
     //A vector of socket file descriptors and a select set.
     std::vector<SocketFD> sockets;
+    std::vector<std::string> interfaces;
     fd_set socketSetMaster;
     std::string tableFile;
 
@@ -86,6 +89,7 @@ int main(int argc, char** argv){
 
             //Push the new socket to the vector and put it onto the fd_set data stack.
             sockets.push_back(packet_socket);
+            interfaces.push_back(tmp->ifa_name);
             FD_SET(sockets.back(), &socketSetMaster);
         }
         //Add a home address if possible.
@@ -146,7 +150,34 @@ int main(int argc, char** argv){
                     }
                     //Its not for us so we look to forward it.
                     else{
+                        //Check if we have a mapping already
+                        char* destMac = routeTable.findMacAddress(recivePacket.getIPAddress());
+                        //No mapping was found
+                        if(destMac == NULL){
+                            //Look up routing table
+                            //Prepae for an arp search
+                            std::string sendInterface = routeTable.arpSearch(recivePacket.getIPAddress());
+                            if(sendInterface != ""){
+                                auto findIt = std::find(interfaces.begin(), interfaces.end(), sendInterface);
 
+                                auto index = std::distance(interfaces.begin(), findIt);
+                                SocketFD sendSocket = sockets.at(index);
+                                char* destIP = routeTable.isRouteForward(sendInterface);
+                                if(destIP == NULL){
+                                    destIP = recivePacket.getIPAddress();
+                                }
+
+                                char* senderMAC = NULL;
+                                char* senderIP = NULL;
+                                for(tmp = ifaddr; tmp!=NULL; tmp=tmp->ifa_next){
+                                    if(tmp->ifa_name == sendInterface && tmp->ifa_addr->sa_family == AF_PACKET){
+                                        senderMAC = (struct sockaddr_ll*)tmp->ifa_addr->sll_addr;
+                                    }
+                                }
+
+                            }
+
+                        }
                     }
                 }
                 catch(int e){

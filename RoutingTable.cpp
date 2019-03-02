@@ -42,7 +42,19 @@ namespace shared{
         return NULL;
     }
 
-    Packet RoutingTable::arpSearch(char* ipAddress){
+    std::string RoutingTable::arpSearch(char* ipAddress){
+        for(auto routeIt = routingTable.begin(); routeIt != routingTable.end(); ++ routeIt){
+            bool found = true;
+            for(int ipElement = 0; ipElement < routeIt->prefixLength/8; ++ipElement){
+                if(ipAddress[ipElement] != routeIt->prefix[ipElement]){
+                    found = false; 
+                    break;
+                }
+            }
+            if(found){
+                return routeIt->interfaceName;
+            }
+        }
 
         return NULL;
     } 
@@ -58,5 +70,18 @@ namespace shared{
         }
         delete[] destIp;
         return false;
+    }
+
+    char* RoutingTable::isRouteForward(std::string interfaceName){
+        for(auto foundIT = routingTable.begin(); foundIT != routingTable.end(); ++foundIT){
+            if(foundIT->interfaceName == interfaceName){
+                if(foundIT->routeForward[0] != '-'){
+                    return foundIT->routeForward;
+                }
+                else
+                    break;
+            }
+        }
+        return NULL;
     }
 }
