@@ -29,10 +29,10 @@ namespace shared{
 
             boost::algorithm::split(prefixSplit, split[0], boost::is_any_of("/"));
 
-            char prefix[4];
+            char* prefix = new char[4];
             int prefixLength = std::stoi(prefixSplit[1]);
 
-            char forwardingIP[4];
+            char* forwardingIP = new char[4];
             bool hasForwardIP = false; 
             //Extract the prefix
             parseIP(prefixSplit[0], prefix);
@@ -52,6 +52,45 @@ namespace shared{
             tableItem.interfaceName = split[2];
 
             routingTable.push_front(tableItem);
+
         }
     }
+
+    void RoutingManager::addMacMapping(std::string interfaceName, char* macAddress){
+        homeMacMapping.emplace(interfaceName, macAddress);
+    }
+
+    void RoutingManager::addIpMapping(std::string interfaceName, char* ipAddress){
+        homeIpMapping.emplace(interfaceName, ipAddress);
+    }
+
+    void RoutingManager::addSocketMapping(std::string interfaceName, SocketFD socket){
+        socketMapping.emplace(interfaceName, socket);
+    }
+
+
+    //This is an unsafe operation but I don't care.
+    char* RoutingManager::getMacAddress(std::string interfaceName) const{
+        char* macAddress = homeMacMapping.find(interfaceName)->second;
+        return macAddress;
+    }
+
+    //This is an unsafe operation but screw it.
+    char* RoutingManager::getIpAddress(std::string interfaceName) const{
+        char* ipAddress = homeIpMapping.find(interfaceName)->second;
+        return ipAddress;
+    }
+
+//    RoutingManager::~RoutingManager(){
+//        //Delete all the data inside the Maps
+//        for(auto macIt = homeMacMapping.begin(); macIt != homeMacMapping.end(); ++macIt){
+//            delete[] macIt->second;
+//        }
+//
+//        for(auto ipIt = homeIpMapping.begin(); ipIt != homeIpMapping.end(); ++ipIt){
+//            delete ipIt->second;
+//        }
+//    }
+
+
 }

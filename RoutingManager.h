@@ -12,6 +12,7 @@ namespace shared{
     class RoutingManager{
     public:
         RoutingManager(std::string filename);
+//        ~RoutingManager();
 
         void addMacMapping(std::string interfaceName, char* macAddress);
         void addIpMapping(std::string interfaceName, char* ipAddress);
