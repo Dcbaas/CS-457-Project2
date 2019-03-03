@@ -143,7 +143,6 @@ int main(int argc, char** argv){
                 if(recvaddr.sll_pkttype==PACKET_OUTGOING){
                     continue;
                 }
-                //Is the packet for us? if it is do the icmp or arp stuff
                 else{
                     //start processing all others
                     printf("Got a %d byte packet\n", n);
@@ -155,7 +154,7 @@ int main(int argc, char** argv){
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
-                    else if(recivePacket.getType() == shared::ICMP){
+                    else if(recivePacket.getType() == shared::ICMP_REQUEST){
                         printf("Got an ICMP packet\n");
                         sendPacket = recivePacket.constructResponseICMP();
                         send(*socket_it, sendPacket.data, 98, 0);

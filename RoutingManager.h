@@ -21,7 +21,8 @@ namespace shared{
         uint8_t* getIpAddress(std::string interfaceName) const; 
         SocketFD getSocketName(std::string interfaceName) const;
 
-        bool isHome(uint8_t* ipAddress);
+        bool isHomeIp(uint8_t* ipAddress);
+        bool isHomeMac(uint8_t* macAddress);
     private:
         //The routing table is used to find where a packet needs to go.
         std::forward_list<struct TableItem> routingTable;

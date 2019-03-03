@@ -83,7 +83,7 @@ namespace shared{
         return ipAddress;
     }
 
-    bool RoutingManager::isHome(uint8_t* ipAddress){
+    bool RoutingManager::isHomeIp(uint8_t* ipAddress){
         uint32_t rhs, lhs;
         memcpy(&rhs, ipAddress, 4);
         for(auto ipIt = homeIpMapping.begin(); ipIt != homeIpMapping.end(); ++ipIt){

@@ -32,11 +32,11 @@ namespace shared{
             memcpy(&detail.arp, &data[ETHER_LEN], ARP_LEN);
             packetType = ARP;
         }
-        else if(ntohs(ethernetHeader.ether_type) == ICMP_CODE){
+        else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             //ICMP stuff
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
-            packetType = ICMP;
+            packetType = ICMP_REQUEST;
         }
         else{
             throw 1; }
