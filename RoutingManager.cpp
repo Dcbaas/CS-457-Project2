@@ -29,10 +29,10 @@ namespace shared{
 
             boost::algorithm::split(prefixSplit, split[0], boost::is_any_of("/"));
 
-            char* prefix = new char[4];
+            uint8_t* prefix = new uint8_t[4];
             int prefixLength = std::stoi(prefixSplit[1]);
 
-            char* forwardingIP = new char[4];
+            uint8_t* forwardingIP = new uint8_t[4];
             bool hasForwardIP = false; 
             //Extract the prefix
             parseIP(prefixSplit[0], prefix);
@@ -56,11 +56,11 @@ namespace shared{
         }
     }
 
-    void RoutingManager::addMacMapping(std::string interfaceName, char* macAddress){
+    void RoutingManager::addMacMapping(std::string interfaceName, uint8_t* macAddress){
         homeMacMapping.emplace(interfaceName, macAddress);
     }
 
-    void RoutingManager::addIpMapping(std::string interfaceName, char* ipAddress){
+    void RoutingManager::addIpMapping(std::string interfaceName, uint8_t* ipAddress){
         homeIpMapping.emplace(interfaceName, ipAddress);
     }
 
@@ -70,27 +70,27 @@ namespace shared{
 
 
     //This is an unsafe operation but I don't care.
-    char* RoutingManager::getMacAddress(std::string interfaceName) const{
-        char* macAddress = homeMacMapping.find(interfaceName)->second;
+    uint8_t* RoutingManager::getMacAddress(std::string interfaceName) const{
+        uint8_t* macAddress = homeMacMapping.find(interfaceName)->second;
         return macAddress;
     }
 
     //This is an unsafe operation but screw it.
-    char* RoutingManager::getIpAddress(std::string interfaceName) const{
-        char* ipAddress = homeIpMapping.find(interfaceName)->second;
+    uint8_t* RoutingManager::getIpAddress(std::string interfaceName) const{
+        uint8_t* ipAddress = homeIpMapping.find(interfaceName)->second;
         return ipAddress;
     }
 
-//    RoutingManager::~RoutingManager(){
-//        //Delete all the data inside the Maps
-//        for(auto macIt = homeMacMapping.begin(); macIt != homeMacMapping.end(); ++macIt){
-//            delete[] macIt->second;
-//        }
-//
-//        for(auto ipIt = homeIpMapping.begin(); ipIt != homeIpMapping.end(); ++ipIt){
-//            delete ipIt->second;
-//        }
-//    }
-
-
+    bool RoutingManager::isHome(uint8_t* ipAddress){
+        uint32_t rhs, lhs;
+        memcpy(&rhs, ipAddress, 4);
+        for(auto ipIt = homeIpMapping.begin(); ipIt != homeIpMapping.end(); ++ipIt){
+           memcpy(&lhs, ipIt->second,4); 
+           if(rhs == lhs){
+               return true;
+           }
+        }
+        return false;
+    }
 }
+

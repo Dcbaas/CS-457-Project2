@@ -3,9 +3,9 @@
 #include <string>
 
 namespace shared{
-    void parseIP(std::string& strIP, char* dest);
-    uint32_t array_to_uint(char* ipAddress);
-    void uint_to_array(uint32_t src, char* dest);
+    void parseIP(std::string& strIP, uint8_t* dest);
+    uint32_t array_to_uint(uint8_t* ipAddress);
+    void uint_to_array(uint32_t src, uint8_t* dest);
     
     struct TableItem{
         uint8_t prefix[4];

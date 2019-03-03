@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace shared{
-    void parseIP(std::string& strIP, char* dest){
+    void parseIP(std::string& strIP, uint8_t* dest){
         std::vector<std::string> ipSplit(4);
         boost::algorithm::split(ipSplit, strIP, boost::is_any_of(".")); 
 

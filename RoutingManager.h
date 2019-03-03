@@ -14,12 +14,14 @@ namespace shared{
         RoutingManager(std::string filename);
 //        ~RoutingManager();
 
-        void addMacMapping(std::string interfaceName, char* macAddress);
-        void addIpMapping(std::string interfaceName, char* ipAddress);
+        void addMacMapping(std::string interfaceName, uint8_t* macAddress);
+        void addIpMapping(std::string interfaceName, uint8_t* ipAddress);
         void addSocketMapping(std::string interfaceName, SocketFD socket);
-        char* getMacAddress(std::string interfaceName) const;
-        char* getIpAddress(std::string interfaceName) const; 
+        uint8_t* getMacAddress(std::string interfaceName) const;
+        uint8_t* getIpAddress(std::string interfaceName) const; 
         SocketFD getSocketName(std::string interfaceName) const;
+
+        bool isHome(uint8_t* ipAddress);
     private:
         //The routing table is used to find where a packet needs to go.
         std::forward_list<struct TableItem> routingTable;
@@ -28,10 +30,10 @@ namespace shared{
         std::forward_list<struct ForwardingData> forwardingTable;
 
         //A mapping of a home MAC address to an interface name.
-        std::map<std::string, char*> homeMacMapping;
+        std::map<std::string, uint8_t*> homeMacMapping;
 
         //A mapping of a home IP address to an interface name.
-        std::map<std::string, char*> homeIpMapping;
+        std::map<std::string, uint8_t*> homeIpMapping;
 
         //A mapping of a Socket File Descriptor to an interface name.
         std::map<std::string, SocketFD> socketMapping;

@@ -1,5 +1,5 @@
-all: Packet.o route.o 
-	g++ route.o Packet.o -o vrouter -std=c++11 -g
+all: Packet.o route.o RoutingManager.o TableConstructs.o
+	g++ route.o Packet.o RoutingManager.o TableConstructs.o -o vrouter -std=c++11 -g
 
 Packet.o: Packet.cpp
 	g++ Packet.cpp -c -std=c++11 -g

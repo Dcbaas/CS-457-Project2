@@ -1,4 +1,7 @@
 #include "Packet.h"
+#include "RoutingManager.h"
+#include "TableConstructs.h"
+
 
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
@@ -28,6 +31,8 @@ int main(int argc, char** argv){
     std::string tableFile;
 
 
+
+
     //Get the routing table 
     if(argc == 2){
         tableFile = argv[1];
@@ -37,7 +42,8 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    //    shared::RoutingTable routeTable(tableFile);
+    shared::RoutingManager routingManager(argv[1]);
+
 
     SocketFD packet_socket;
     //get list of interface addresses. This is a linked list. Next
@@ -60,6 +66,8 @@ int main(int argc, char** argv){
         //about those for the purpose of enumerating interfaces. We can
         //use the AF_INET addresses in this list for example to get a list
         //of our own IP addresses
+        //
+        //Add a socket on the mac address and add the address to the routing manager.
         if(tmp->ifa_addr->sa_family==AF_PACKET && strcmp(tmp->ifa_name, "lo") != 0){
             printf("Interface: %s\n",tmp->ifa_name);
             printf("Creating Socket on interface %s\n",tmp->ifa_name);
@@ -88,14 +96,22 @@ int main(int argc, char** argv){
             //Push the new socket to the vector and put it onto the fd_set data stack.
             sockets.push_back(packet_socket);
             interfaces.push_back(tmp->ifa_name);
+
+            //Add the mac addr to the routing manager as well as the socket 
+            routingManager.addMacMapping(tmp->ifa_name, 
+                    ((struct sockaddr_ll*)tmp->ifa_addr)->sll_addr);
+
+            //Add the inteface name and the socket mapping
+            routingManager.addSocketMapping(tmp->ifa_name, packet_socket);
+
             FD_SET(sockets.back(), &socketSetMaster);
         }
         //Add a home address if possible.
         else if(tmp->ifa_addr->sa_family == AF_INET){
             struct sockaddr_in* homeAddress = (struct sockaddr_in*)tmp->ifa_addr;
-            char ipAddress[4];
+            uint8_t ipAddress[4];
             memcpy(ipAddress,&homeAddress->sin_addr.s_addr, 4);
-
+            routingManager.addIpMapping(tmp->ifa_name, ipAddress);
         }
     }
     //loop and recieve packets. We are only looking at one interface,
@@ -121,6 +137,7 @@ int main(int argc, char** argv){
                     //see packets in both directions. Only outgoing can be seen when
                     //using a packet socket with some specific protocol)
                     int n = recvfrom(*socket_it, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
+
                     //ignore outgoing packets (we can't disable some from being sent
                     //by the OS automatically, for example ICMP port unreachable
                     //messages, so we will just ignore them here)
@@ -128,10 +145,8 @@ int main(int argc, char** argv){
                         continue;
                     //start processing all others
                     printf("Got a %d byte packet\n", n);
-
                     recivePacket = shared::Packet(buf);
 
-                    //Check if it is for us
                     if(recivePacket.getType() == shared::ARP){
                         printf("Got an ARP packet\n");
                         //            sendPacket.printARPData();
