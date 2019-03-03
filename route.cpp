@@ -130,19 +130,21 @@ int main(int argc, char** argv){
 
         for(auto socket_it = sockets.begin(); socket_it < sockets.end(); ++socket_it){
             if(FD_ISSET(*socket_it, &cycle)){
-                try{
-                    //we can use recv, since the addresses are in the packet, but we
-                    //use recvfrom because it gives us an easy way to determine if
-                    //this packet is incoming or outgoing (when using ETH_P_ALL, we
-                    //see packets in both directions. Only outgoing can be seen when
-                    //using a packet socket with some specific protocol)
-                    int n = recvfrom(*socket_it, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
+                //we can use recv, since the addresses are in the packet, but we
+                //use recvfrom because it gives us an easy way to determine if
+                //this packet is incoming or outgoing (when using ETH_P_ALL, we
+                //see packets in both directions. Only outgoing can be seen when
+                //using a packet socket with some specific protocol)
+                int n = recvfrom(*socket_it, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
 
-                    //ignore outgoing packets (we can't disable some from being sent
-                    //by the OS automatically, for example ICMP port unreachable
-                    //messages, so we will just ignore them here)
-                    if(recvaddr.sll_pkttype==PACKET_OUTGOING)
-                        continue;
+                //ignore outgoing packets (we can't disable some from being sent
+                //by the OS automatically, for example ICMP port unreachable
+                //messages, so we will just ignore them here)
+                if(recvaddr.sll_pkttype==PACKET_OUTGOING){
+                    continue;
+                }
+                //Is the packet for us? if it is do the icmp or arp stuff
+                else{
                     //start processing all others
                     printf("Got a %d byte packet\n", n);
                     recivePacket = shared::Packet(buf);
@@ -164,26 +166,12 @@ int main(int argc, char** argv){
                         //No mapping was found
                     }
                 }
-                catch(int e){
-                    if(e == 1){
-
-                        printf("Bad packet was recived and ignored\n");
-                    }
-                    else if(e == 2){
-                        printf("Interface was not found for response\n");
-                    }
-                }
             }
         }
-
-        //what else to do is up to you, you can send packets with send,
-        //just like we used for TCP sockets (or you can use sendto, but it
-        //is not necessary, since the headers, including all addresses,
-        //need to be in the buffer you are sending)
-
     }
     //free the interface list when we don't need it anymore
     freeifaddrs(ifaddr);
     //exit
     return 0;
 }
+

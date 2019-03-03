@@ -54,6 +54,8 @@ namespace shared{
             routingTable.push_front(tableItem);
 
         }
+
+        tableFile.close();
     }
 
     void RoutingManager::addMacMapping(std::string interfaceName, uint8_t* macAddress){
