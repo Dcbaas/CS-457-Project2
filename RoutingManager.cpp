@@ -4,13 +4,13 @@
 #include <map>
 #include <forward_list>
 #include <string>
-#include <ifstream>
+#include <fstream>
 #include <sstream>
 
 #include <boost/algorithm/string.hpp>
 
 namespace shared{
-    RoutingManager(std::string filename){
+    RoutingManager::RoutingManager(std::string filename){
         std::ifstream tableFile;
         tableFile.open(filename);
 
@@ -29,7 +29,29 @@ namespace shared{
 
             boost::algorithm::split(prefixSplit, split[0], boost::is_any_of("/"));
 
+            char prefix[4];
+            int prefixLength = std::stoi(prefixSplit[1]);
 
+            char forwardingIP[4];
+            bool hasForwardIP = false; 
+            //Extract the prefix
+            parseIP(prefixSplit[0], prefix);
+
+            //Extract the forwarding ip if there is something there.
+            if(split[1] != "-"){
+                parseIP(split[1], forwardingIP);
+                hasForwardIP = true;
+            }
+
+            struct TableItem tableItem;
+
+            memcpy(tableItem.prefix, prefix, 4);
+            tableItem.prefixLength = prefixLength;
+            memcpy(tableItem.fowardingAddress, forwardingIP, 4);
+
+            tableItem.interfaceName = split[2];
+
+            routingTable.push_front(tableItem);
         }
     }
 }

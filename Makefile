@@ -10,5 +10,8 @@ route.o: route.cpp
 TableConstructs.o: TableConstructs.cpp
 	g++ TableConstructs.cpp -c -std=c++11 -g
 
+RoutingManager.o: RoutingManager.cpp
+	g++ RoutingManager.cpp -c -std=c++11 -g
+
 clean:
 	rm -rf *.o vrouter
