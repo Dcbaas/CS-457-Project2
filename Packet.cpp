@@ -30,7 +30,7 @@ namespace shared{
         if(ntohs(ethernetHeader.ether_type) == ARP_CODE){
             //Arp stuff
             memcpy(&detail.arp, &data[ETHER_LEN], ARP_LEN);
-            packetType = ARP;
+            packetType = ARP_REQUEST;
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             //ICMP stuff
@@ -60,7 +60,7 @@ namespace shared{
         memcpy(detail.arp.arp_tha, targetMAC, 6);
         memcpy(detail.arp.arp_tpa, targetIP, 4);
 
-        packetType = ARP;
+        packetType = ARP_RESPONSE;
 
         //Construct the ethernet header
         //Destination

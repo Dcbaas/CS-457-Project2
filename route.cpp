@@ -148,7 +148,7 @@ int main(int argc, char** argv){
                     printf("Got a %d byte packet\n", n);
                     recivePacket = shared::Packet(buf);
 
-                    if(recivePacket.getType() == shared::ARP){
+                    if(recivePacket.getType() == shared::ARP_REQUEST){
                         printf("Got an ARP packet\n");
                         //            sendPacket.printARPData();
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
