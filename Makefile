@@ -7,5 +7,8 @@ Packet.o: Packet.cpp
 route.o: route.cpp
 	g++ route.cpp -c -std=c++11 -g
 
+TableConstructs.o: TableConstructs.cpp
+	g++ TableConstructs.cpp -c -std=c++11 -g
+
 clean:
 	rm -rf *.o vrouter

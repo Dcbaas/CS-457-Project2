@@ -16,7 +16,6 @@
 #include <algorithm>
 
 
-typedef int SocketFD;
 int main(int argc, char** argv){
     //Define 2 Packet objects one for reciving, the other for sending.
     shared::Packet sendPacket;
