@@ -148,21 +148,38 @@ int main(int argc, char** argv){
                     printf("Got a %d byte packet\n", n);
                     recivePacket = shared::Packet(buf);
 
+                    //ARP always works so this should be fine. 
                     if(recivePacket.getType() == shared::ARP_REQUEST){
                         printf("Got an ARP packet\n");
                         //            sendPacket.printARPData();
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
-                    else if(recivePacket.getType() == shared::ICMP_REQUEST){
-                        printf("Got an ICMP packet\n");
-                        sendPacket = recivePacket.constructResponseICMP();
-                        send(*socket_it, sendPacket.data, 98, 0);
+                    //Check if the packet is for us.
+                    //Do stuff with it if it is.
+                    else if(routingManager.isHomeIp(recivePacket.getIPAddress())){
+
+                        if(recivePacket.getType() == shared::ICMP_REQUEST){
+                            printf("Got an ICMP packet\n");
+                            sendPacket = recivePacket.constructResponseICMP();
+                            send(*socket_it, sendPacket.data, 98, 0);
+                        }
+                    }
+                    //Attempt to forward it.
+                    else{
+                        uint8_t* destinationIP = recivePacket.getIPAddress();
+
+
                     }
                     //Its not for us so we look to forward it.
                     else{
                         //Check if we have a mapping already
-                        //No mapping was found
+                        //No mapping find the interface assocaiated with the prefix
+                        std::string targetInterface = findRouting(destinationIP);
+                        //If we don't find anything in the table just discard the packet right now.
+                        if(targetInterface == ""){
+                            continue;
+                        }
                     }
                 }
             }

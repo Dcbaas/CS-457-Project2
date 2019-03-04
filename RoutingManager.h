@@ -17,6 +17,14 @@ namespace shared{
         void addMacMapping(std::string interfaceName, uint8_t* macAddress);
         void addIpMapping(std::string interfaceName, uint8_t* ipAddress);
         void addSocketMapping(std::string interfaceName, SocketFD socket);
+        
+        //This will find an already established forwarding for a given IP will return 
+        //nullptr if nothing is found.
+        uint8_t* findForwarding(uint8_t* ipAddress);
+
+        //Find the matching prefix for the given ip and return the interface name.
+        //Return an empty string if nothing is found.
+        std::string findRouting(uint8_t* ipAddress);
         uint8_t* getMacAddress(std::string interfaceName) const;
         uint8_t* getIpAddress(std::string interfaceName) const; 
         SocketFD getSocketName(std::string interfaceName) const;
@@ -38,5 +46,7 @@ namespace shared{
 
         //A mapping of a Socket File Descriptor to an interface name.
         std::map<std::string, SocketFD> socketMapping;
+
+        bool prefixCompare(uint8_t* rhs, uint8_t* lhs, int prefixLength);
     };
 }

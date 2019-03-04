@@ -53,7 +53,7 @@ namespace shared{
 
         PacketType getType() const;
 
-        char* getIPAddress() const;
+        uint8_t* getIPAddress() const;
 
     private:
         HeaderDetail detail;

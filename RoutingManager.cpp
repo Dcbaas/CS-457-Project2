@@ -58,6 +58,16 @@ namespace shared{
         tableFile.close();
     }
 
+    std::string RoutingManager::findRouting(uint8_t* ipAddress){
+        for(auto tableIt = routingTable.begin(); tableIt != routingTable.end(); ++tableIt){
+            if(prefixCompare(ipAddress, tableIt->prefix, tableIt->prefixLength)){
+                return tableIt->interfaceName;
+            }
+        }
+        //Return an empty string on failing to find anything;
+        return "";
+    }
+
     void RoutingManager::addMacMapping(std::string interfaceName, uint8_t* macAddress){
         homeMacMapping.emplace(interfaceName, macAddress);
     }
@@ -93,6 +103,18 @@ namespace shared{
            }
         }
         return false;
+    }
+
+    bool RoutingManager::prefixCompare(uint8_t* rhs, uint8_t* lhs, int prefixLength){
+        unsigned int byteLength = prefixLength/8;
+
+        for(int i = 0; i < byteLength; ++i){
+            if(rhs[i] != lhs[i]){
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
