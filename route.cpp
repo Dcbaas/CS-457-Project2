@@ -17,6 +17,7 @@
 #include <string>
 #include <iterator>
 #include <algorithm>
+#include <queue>
 
 
 int main(int argc, char** argv){
@@ -29,9 +30,8 @@ int main(int argc, char** argv){
     std::vector<std::string> interfaces;
     fd_set socketSetMaster;
     std::string tableFile;
-
-
-
+    //Holds packets temporarily until they can be forwarded
+    std::queue<shared::Packet> holdingQueue;
 
     //Get the routing table 
     if(argc == 2){
@@ -165,20 +165,23 @@ int main(int argc, char** argv){
                             send(*socket_it, sendPacket.data, 98, 0);
                         }
                     }
-                    //Attempt to forward it.
-                    else{
-                        uint8_t* destinationIP = recivePacket.getIPAddress();
-
-
-                    }
                     //Its not for us so we look to forward it.
                     else{
+                        uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
                         //No mapping find the interface assocaiated with the prefix
-                        std::string targetInterface = findRouting(destinationIP);
+                        std::string targetInterface = routingManager.findRouting(destinationIP);
                         //If we don't find anything in the table just discard the packet right now.
                         if(targetInterface == ""){
                             continue;
+                        }
+                        //Get everything ready to send out an arp request.
+                        else{
+                            uint8_t* senderIP = routingManager.getIpAddress(targetInterface);
+                            uint8_t* senderMac = routingManager.getMacAddress(targetInterface);
+                            uint8_t* targetIP = destinationIP;
+                            sendPacket = shared::Packet(senderIP, senderMac, targetIP);
+                            //TODO Send the packet out and put the recived on in a queue until the arp is recived.
                         }
                     }
                 }

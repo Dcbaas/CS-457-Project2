@@ -106,6 +106,7 @@ namespace shared{
 
     //IMPELEMENT
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
+        uint8_t broadcastAddress[6] = {0x0C,0x0C,0x0C,0x0C,0x0C,0x0C};
         //Don't ask
         detail.arp.ea_hdr.ar_hrd = 256;
         detail.arp.ea_hdr.ar_pro = 8;
@@ -117,6 +118,8 @@ namespace shared{
         //be used on broadcast
         //
         //Also be sure to copy all of the data into the data array.
+        memcpy(detail.arp.arp_sha, senderMAC, 6);
+        memcpy(detail.arp.arp_spa, senderIP, 4);
 
     }
 
@@ -254,12 +257,10 @@ namespace shared{
         return this->packetType;
     }
 
-    char* Packet::getIPAddress() const{
-        char* returnIP = new char[4];
+    uint8_t* Packet::getIPAddress() const{
+        uint8_t* returnIP = new uint8_t[4];
         memcpy(returnIP, &ipHeader.daddr, 4);
         return returnIP;
     }
-
-
 }
 
