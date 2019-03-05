@@ -181,7 +181,11 @@ int main(int argc, char** argv){
                             uint8_t* senderMac = routingManager.getMacAddress(targetInterface);
                             uint8_t* targetIP = destinationIP;
                             sendPacket = shared::Packet(senderIP, senderMac, targetIP);
-                            //TODO Send the packet out and put the recived on in a queue until the arp is recived.
+                            //TODO Send the arp packet out and put the recived on in a queue until 
+                            //the arp is recived.
+                            holdingQueue.push(recivePacket);
+                            SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
+                            send(sendingSocket, sendPacket.data, 42, 0);
                         }
                     }
                 }

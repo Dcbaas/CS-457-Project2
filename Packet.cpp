@@ -18,6 +18,7 @@
 #include <net/ethernet.h>
 
 namespace shared{ 
+    //Constructs a recived packet
     Packet::Packet(char* data){
         memcpy(this->data, data, 1500);
 
@@ -42,8 +43,10 @@ namespace shared{
             throw 1; }
     }
 
+    //Empty Packet
     Packet::Packet(){}
 
+    //Constructs an ARP responese
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, 
             uint8_t* targetMAC, Packet& request){
         struct arphdr* requestEthHeader = &request.detail.arp.ea_hdr;
@@ -79,12 +82,14 @@ namespace shared{
 
     }
 
+    //ICMP response header. 
     Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
             struct icmphdr& icmpResponse, char* icmpData, char size){
         memcpy(this->data, &etherResponse, ETHER_LEN);
         memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
         memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
-        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], 
+                &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
 
         printf("%d\n", icmpResponse.un.echo.id);
         this->ethernetHeader = etherResponse;
@@ -94,6 +99,7 @@ namespace shared{
 
     }
 
+    //Equals operator
     Packet& Packet::operator=(Packet other){
         std::swap(this->detail,other.detail);
         std::swap(this->data, other.data);
@@ -105,8 +111,11 @@ namespace shared{
     }
 
     //IMPELEMENT
+    //Arp request
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
-        uint8_t broadcastAddress[6] = {0x0C,0x0C,0x0C,0x0C,0x0C,0x0C};
+        uint8_t broadcastAddress[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+        uint8_t targetAddress[6] = {0, 0, 0, 0, 0, 0};
+
         //Don't ask
         detail.arp.ea_hdr.ar_hrd = 256;
         detail.arp.ea_hdr.ar_pro = 8;
@@ -120,7 +129,16 @@ namespace shared{
         //Also be sure to copy all of the data into the data array.
         memcpy(detail.arp.arp_sha, senderMAC, 6);
         memcpy(detail.arp.arp_spa, senderIP, 4);
+        memcpy(detail.arp.arp_tha, targetAddress, 6);
+        memcpy(detail.arp.arp_tpa, targetIP, 4);
 
+        //Form the Ethernet Header
+        memcpy(ethernetHeader.ether_dhost, broadcastAddress,6);
+        memcpy(ethernetHeader.ether_shost, senderMAC, 6);
+        ethernetHeader.ether_type = htons(ARP_CODE);
+
+        memcpy(data, &ethernetHeader, ETHER_LEN);
+        memcpy(&data[ETHER_LEN], &detail.arp, ARP_LEN);
     }
 
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
