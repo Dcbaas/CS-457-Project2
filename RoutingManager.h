@@ -50,3 +50,5 @@ namespace shared{
         bool prefixCompare(uint8_t* rhs, uint8_t* lhs, int prefixLength);
     };
 
+}
+

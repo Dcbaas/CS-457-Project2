@@ -91,7 +91,13 @@ namespace shared{
     uint8_t* RoutingManager::getIpAddress(std::string interfaceName) const{
         uint8_t* ipAddress = homeIpMapping.find(interfaceName)->second;
         return ipAddress;
+ 
     }
+
+    SocketFD RoutingManager::getSocketName(std::string interfaceName) const{
+        return socketMapping.find(interfaceName)->second;
+    }
+            
 
     bool RoutingManager::isHomeIp(uint8_t* ipAddress){
         uint32_t rhs, lhs;
