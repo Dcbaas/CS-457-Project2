@@ -186,6 +186,7 @@ int main(int argc, char** argv){
                             holdingQueue.push(recivePacket);
                             SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
                             send(sendingSocket, sendPacket.data, 42, 0);
+                            printf("Arp request was made and sent\n");
                         }
                     }
                 }
