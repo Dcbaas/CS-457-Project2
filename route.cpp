@@ -55,7 +55,7 @@ int main(int argc, char** argv){
     //with which MAC address.
     struct ifaddrs *ifaddr, *tmp;
     if(getifaddrs(&ifaddr)==-1){
-        perror("getifaddrs");
+       perror("getifaddrs");
         return 1;
     }
     //have the list, loop over the list
@@ -155,6 +155,10 @@ int main(int argc, char** argv){
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
+                    else if(recivePacket.getType() == shared::ARP_RESPONSE){
+                        //TODO Implement
+                        continue;
+                    }
                     //Check if the packet is for us.
                     //Do stuff with it if it is.
                     else if(routingManager.isHomeIp(recivePacket.getIPAddress())){
@@ -202,8 +206,15 @@ int main(int argc, char** argv){
             shared::Packet queuePacket = holdingQueue.front();
             holdingQueue.pop();
 
+
             //Search for the mapping for a sending path if nothing comes up then push this back onto
             //the queue
+            uint8_t* destinationIP = queuePacket.getIPAddress();
+            struct shared::ForwardingData* found = routingManager.findForwarding(destinationIP);
+            //We found a forwarding. change the ethernet header to update the source and dest.
+            if(found != nullptr){
+                queuePacket.updateEthernetHeader(*found);                
+            }
         }
     }
     //free the interface list when we don't need it anymore

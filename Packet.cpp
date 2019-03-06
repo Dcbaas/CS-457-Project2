@@ -220,6 +220,25 @@ namespace shared{
 
         return reply;
     }
+
+    void Packet::updateEthernetHeader(struct ForwardingData& forwardingData){
+        struct ether_header newHeader;
+
+        newHeader.ether_type = this->ethernetHeader.ether_type;
+        memcpy(newHeader.ether_shost, forwardingData.sourceMacAddress, 6);
+        memcpy(newHeader.ether_dhost, forwardingData.destinationMacAddress, 6);
+
+        //Copy the data into the data array
+        memcpy(this->data, &newHeader, ETHER_LEN);
+        
+    }
+
+    //This doesn't take into account the interface name and the socket used.
+    struct ForwardingData Packet::generateForwardData(){
+        struct ForwardingData result;
+
+        memcpy(result
+    }
     void Packet::printARPData() {
         //Print the MAC Address? 
         struct ether_addr temp;

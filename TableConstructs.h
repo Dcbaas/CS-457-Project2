@@ -23,10 +23,12 @@ namespace shared{
      * 2. The next IMEDIATE destination MAC address
      * 3. The Socket to foward the data on
      * 4. The name of the interface to foward the data on.
+     * 5. The source mac Address this will be sent on
      **/
     struct ForwardingData{
         uint8_t ipAddress[4];
-        uint8_t macAddress[6];
+        uint8_t destinationMacAddress[6];
+        uint8_t sourceMacAddress[6];
         int sendingSocket;
         std::string interfaceName;
     };

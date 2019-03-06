@@ -1,6 +1,8 @@
 #ifndef                     PACKET_H
 #define                     PACKET_H
 
+#include "TableConstructs.h"
+
 #include <ifaddrs.h>
 #include <netpacket/packet.h>
 #include <netinet/ether.h>
@@ -47,6 +49,8 @@ namespace shared{
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP();
+        void updateEthernetHeader(struct ForwardingData& forwardData);
+        struct ForwardData generateForwardData();
         Packet& operator=(Packet other);
 
         void printARPData();
