@@ -169,6 +169,8 @@ int main(int argc, char** argv){
                     else{
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
+                        //TODO implement.
+                        
                         //No mapping find the interface assocaiated with the prefix
                         std::string targetInterface = routingManager.findRouting(destinationIP);
                         //If we don't find anything in the table just discard the packet right now.
@@ -187,10 +189,21 @@ int main(int argc, char** argv){
                             SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
                             send(sendingSocket, sendPacket.data, 42, 0);
                             printf("Arp request was made and sent\n");
+                            continue;
                         }
                     }
                 }
             }
+        }
+        //Send all of the packets still in the queue that we can. 
+        //A packet can only be sent if there is a forwarding mapping 
+        int currentSize = holdingQueue.size();
+        for(int i = 0; i < currentSize; ++i){
+            shared::Packet queuePacket = holdingQueue.front();
+            holdingQueue.pop();
+
+            //Search for the mapping for a sending path if nothing comes up then push this back onto
+            //the queue
         }
     }
     //free the interface list when we don't need it anymore

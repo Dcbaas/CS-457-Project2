@@ -58,6 +58,17 @@ namespace shared{
         tableFile.close();
     }
 
+    struct ForwardingData* RoutingManager::findForwarding(uint8_t* ipAddress){
+        for(auto forwardingIt = forwardingTable.begin(); forwardingIt != forwardingTable.end(); 
+                ++forwardingIt){
+           if(ipCompare(ipAddress, forwardingIt->ipAddress)){
+               return &(*forwardingIt);
+           }
+        }
+        
+        return nullptr;
+    }
+
     std::string RoutingManager::findRouting(uint8_t* ipAddress){
         for(auto tableIt = routingTable.begin(); tableIt != routingTable.end(); ++tableIt){
             if(prefixCompare(ipAddress, tableIt->prefix, tableIt->prefixLength)){
@@ -121,6 +132,15 @@ namespace shared{
         }
 
         return true;
+    }
+
+    bool RoutingManager::ipCompare(uint8_t* rhs, uint8_t* lhs){
+        int left, right;
+
+        memcpy(&left, lhs, 4);
+        memcpy(&right, rhs, 4);
+
+        return right == left;
     }
 }
 
