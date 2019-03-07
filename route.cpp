@@ -186,7 +186,7 @@ int main(int argc, char** argv){
                         struct shared::ForwardingData* forward = 
                             routingManager.findForwarding(destinationIP);
 
-                        if(forward == nullptr){
+                        if(forward != nullptr){
                             //We have forwarding continue for now
                             recivePacket.updateEthernetHeader(*forward);
                             SocketFD sendingSocket = forward->sendingSocket;
