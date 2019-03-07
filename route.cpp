@@ -145,7 +145,7 @@ int main(int argc, char** argv){
                 }
                 else{
                     //start processing all others
-                    printf("Got a %d byte packet\n", n);
+                    printf("\n\nGot a %d byte packet\n", n);
                     recivePacket = shared::Packet(buf);
 
                     //ARP always works so this should be fine. 
@@ -156,7 +156,7 @@ int main(int argc, char** argv){
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
                     else if(recivePacket.getType() == shared::ARP_RESPONSE){
-                        printf("Got an ARP response");
+                        printf("Got an ARP response packet \n");
 
                         struct shared::ForwardingData temp;
                         recivePacket.generateForwardData(temp);
