@@ -150,18 +150,22 @@ int main(int argc, char** argv){
 
                     //ARP always works so this should be fine. 
                     if(recivePacket.getType() == shared::ARP_REQUEST){
-                        printf("Got an ARP packet\n");
-                        //            sendPacket.printARPData();
+                        printf("Got an ARP Request packet\n");
+
                         sendPacket = recivePacket.constructResponseARP(ifaddr);
                         send(*socket_it, sendPacket.data, 42, 0);
                     }
                     else if(recivePacket.getType() == shared::ARP_RESPONSE){
-                        //TODO Implement
-                        struct ForwardingData temp;
+                        printf("Got an ARP response");
+
+                        struct shared::ForwardingData temp;
                         recivePacket.generateForwardData(temp);
 
                         temp.sendingSocket = *socket_it;
-                        temp.interfaceName = 
+                        temp.interfaceName = routingManager.findRouting(temp.ipAddress);
+
+                        //Add to forwarding List
+                        routingManager.addForwarding(temp);
                         continue;
                     }
                     //Check if the packet is for us.

@@ -59,6 +59,11 @@ namespace shared{
 
         //Compares a whole IP address
         bool ipCompare(uint8_t* rhs, uint8_t* lhs);
+
+        bool macCompare(uint8_t* rhs, uint8_t* lhs);
+
+        bool forwardingCompare(struct ForwardingData& lhs, struct ForwardingData& rhs);
+        
     };
 
 }

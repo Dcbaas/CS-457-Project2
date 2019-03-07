@@ -69,6 +69,22 @@ namespace shared{
         return nullptr;
     }
 
+
+    void RoutingManager::addForwarding(struct ForwardingData data){
+        //Make sure this new forwarding isn't already in the list.
+        //If it is, discard it.
+        for(auto forwardDataIt = forwardingTable.begin(); forwardDataIt != forwardingTable.end();
+                ++forwardDataIt){
+            //If this is a match return to discard
+            if(forwardingCompare(data, *forwardDataIt)){
+                return;
+            }
+        }
+
+        //No match was found add to list
+        forwardingTable.push_front(data);
+    }
+
     std::string RoutingManager::findRouting(uint8_t* ipAddress){
         for(auto tableIt = routingTable.begin(); tableIt != routingTable.end(); ++tableIt){
             if(prefixCompare(ipAddress, tableIt->prefix, tableIt->prefixLength)){
@@ -141,6 +157,33 @@ namespace shared{
         memcpy(&right, rhs, 4);
 
         return right == left;
+    }
+
+
+    //Returns true if the mac address are idential
+    bool RoutingManager::macCompare(uint8_t* rhs, uint8_t* lhs){
+        for(int i = 0; i < 6; ++i){
+            if(rhs[i] != lhs[i]){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool RoutingManager::forwardingCompare(struct ForwardingData& lhs, struct ForwardingData& rhs){
+        //Compare the ips
+        bool equalIP = ipCompare(lhs.ipAddress, rhs.ipAddress);
+
+        //Compare both source and destination mac addresses
+        bool equalMacSource = macCompare(lhs.sourceMacAddress, rhs.sourceMacAddress);
+        bool equalMacDest = macCompare(lhs.destinationMacAddress, rhs.destinationMacAddress);
+
+        bool equalSocekts = lhs.sendingSocket == rhs.sendingSocket;
+
+        bool equalInterfaceNames = lhs.interfaceName == rhs.interfaceName;
+
+        return equalIP && equalMacSource && equalMacDest && equalSocekts && equalInterfaceNames;
     }
 }
 
