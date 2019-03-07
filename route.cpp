@@ -182,7 +182,15 @@ int main(int argc, char** argv){
                     else{
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
-                        //TODO implement.
+                        
+                        struct shared::ForwardingData* forward = 
+                            routingManager.findForwarding(destinationIP);
+
+                        if(forward == nullptr){
+                            //We have forwarding continue for now
+                            continue;
+                            //TODO implement
+                        }
                         
                         //No mapping find the interface assocaiated with the prefix
                         std::string targetInterface = routingManager.findRouting(destinationIP);
