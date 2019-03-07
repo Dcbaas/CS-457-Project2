@@ -188,6 +188,11 @@ int main(int argc, char** argv){
 
                         if(forward == nullptr){
                             //We have forwarding continue for now
+                            recivePacket.updateEthernetHeader(*forward);
+                            SocketFD sendingSocket = forward->sendingSocket;
+
+                            //Send the socket
+                            send(sendingSocket, recivePacket.data, n, 0);
                             continue;
                             //TODO implement
                         }
