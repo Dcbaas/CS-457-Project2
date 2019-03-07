@@ -26,13 +26,20 @@ namespace shared{
         //Construct ethernetheader
         memcpy(&ethernetHeader,this->data, ETHER_LEN);
 
-        printf("Packet Type: %d\n", ntohs(ethernetHeader.ether_type));
+        //printf("Packet Type: %d\n", ntohs(ethernetHeader.ether_type));
 
         //Check the type
         if(ntohs(ethernetHeader.ether_type) == ARP_CODE){
             //Arp stuff
             memcpy(&detail.arp, &data[ETHER_LEN], ARP_LEN);
-            packetType = ARP_REQUEST;
+            //packetType = ARP_REQUEST;
+            //Deterimine the arp type either request or response
+            if(detail.arp.ea_hdr.ar_op == htons(ARPOP_REPLY)){
+                packetType = ARP_RESPONSE;
+            }
+            else if(detail.arp.ea_hdr.ar_op == htons(ARPOP_REQUEST)){
+                packetType = ARP_REQUEST;
+            }
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             //ICMP stuff
@@ -92,7 +99,7 @@ namespace shared{
         memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], 
                 &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
 
-        printf("%d\n", icmpResponse.un.echo.id);
+        //printf("%d\n", icmpResponse.un.echo.id);
         this->ethernetHeader = etherResponse;
         this->ipHeader = ipResponse;
         this->detail.icmp = icmpResponse;
