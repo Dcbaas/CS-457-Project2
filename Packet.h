@@ -59,6 +59,8 @@ namespace shared{
 
         uint8_t* getIPAddress() const;
 
+        unsigned short getPacketLength() const;
+
     private:
         HeaderDetail detail;
         struct ether_header ethernetHeader;

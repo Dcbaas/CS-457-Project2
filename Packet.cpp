@@ -310,5 +310,9 @@ namespace shared{
         memcpy(returnIP, &ipHeader.daddr, 4);
         return returnIP;
     }
+
+    unsigned short Packet::getPacketLength() const {
+        return ETHER_LEN + htons(ipHeader.tot_len);
+    }
 }
 

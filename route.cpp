@@ -231,6 +231,15 @@ int main(int argc, char** argv){
             //We found a forwarding. change the ethernet header to update the source and dest.
             if(found != nullptr){
                 queuePacket.updateEthernetHeader(*found);                
+                unsigned short sendingLength = queuePacket.getPacketLength();
+                SocketFD sendingSocket = found->sendingSocket;
+
+                //Send the packet
+                send(sendingSocket, queuePacket.data, sendingLength, 0);
+            }
+            else{
+                //Push the packet back onto the queue wait for next cycle. 
+                holdingQueue.push(queuePacket);
             }
         }
     }
