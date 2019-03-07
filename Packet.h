@@ -50,7 +50,7 @@ namespace shared{
         Packet constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP();
         void updateEthernetHeader(struct ForwardingData& forwardData);
-        struct ForwardData generateForwardData();
+        void generateForwardData(struct ForwardingData& result);
         Packet& operator=(Packet other);
 
         void printARPData();

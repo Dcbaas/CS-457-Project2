@@ -1,4 +1,5 @@
 #include "Packet.h"
+#include "TableConstructs.h"
 
 #include <memory>
 #include <algorithm>
@@ -234,11 +235,14 @@ namespace shared{
     }
 
     //This doesn't take into account the interface name and the socket used.
-    struct ForwardingData Packet::generateForwardData(){
-        struct ForwardingData result;
+    void Packet::generateForwardData(struct ForwardingData& result){ 
+        
 
-        memcpy(result
+        memcpy(&result.destinationMacAddress, &detail.arp.arp_sha, 6);
+        memcpy(&result.sourceMacAddress, &detail.arp.arp_tha, 6);
+        memcpy(&result.ipAddress, &detail.arp.arp_spa, 4);
     }
+
     void Packet::printARPData() {
         //Print the MAC Address? 
         struct ether_addr temp;

@@ -157,6 +157,11 @@ int main(int argc, char** argv){
                     }
                     else if(recivePacket.getType() == shared::ARP_RESPONSE){
                         //TODO Implement
+                        struct ForwardingData temp;
+                        recivePacket.generateForwardData(temp);
+
+                        temp.sendingSocket = *socket_it;
+                        temp.interfaceName = 
                         continue;
                     }
                     //Check if the packet is for us.
