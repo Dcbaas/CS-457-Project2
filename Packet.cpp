@@ -1,4 +1,5 @@
 #include "Packet.h"
+#include "TableConstructs.h"
 
 #include <memory>
 #include <algorithm>
@@ -18,32 +19,42 @@
 #include <net/ethernet.h>
 
 namespace shared{ 
+    //Constructs a recived packet
     Packet::Packet(char* data){
         memcpy(this->data, data, 1500);
 
         //Construct ethernetheader
         memcpy(&ethernetHeader,this->data, ETHER_LEN);
 
-        printf("Packet Type: %d\n", ntohs(ethernetHeader.ether_type));
+        //printf("Packet Type: %d\n", ntohs(ethernetHeader.ether_type));
 
         //Check the type
         if(ntohs(ethernetHeader.ether_type) == ARP_CODE){
             //Arp stuff
             memcpy(&detail.arp, &data[ETHER_LEN], ARP_LEN);
-            packetType = ARP;
+            //packetType = ARP_REQUEST;
+            //Deterimine the arp type either request or response
+            if(detail.arp.ea_hdr.ar_op == htons(ARPOP_REPLY)){
+                packetType = ARP_RESPONSE;
+            }
+            else if(detail.arp.ea_hdr.ar_op == htons(ARPOP_REQUEST)){
+                packetType = ARP_REQUEST;
+            }
         }
-        else if(ntohs(ethernetHeader.ether_type) == ICMP_CODE){
+        else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             //ICMP stuff
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
-            packetType = ICMP;
+            packetType = ICMP_REQUEST;
         }
         else{
             throw 1; }
     }
 
+    //Empty Packet
     Packet::Packet(){}
 
+    //Constructs an ARP responese
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, 
             uint8_t* targetMAC, Packet& request){
         struct arphdr* requestEthHeader = &request.detail.arp.ea_hdr;
@@ -60,7 +71,7 @@ namespace shared{
         memcpy(detail.arp.arp_tha, targetMAC, 6);
         memcpy(detail.arp.arp_tpa, targetIP, 4);
 
-        packetType = ARP;
+        packetType = ARP_RESPONSE;
 
         //Construct the ethernet header
         //Destination
@@ -79,14 +90,16 @@ namespace shared{
 
     }
 
+    //ICMP response header. 
     Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
             struct icmphdr& icmpResponse, char* icmpData, char size){
         memcpy(this->data, &etherResponse, ETHER_LEN);
         memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
         memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
-        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], 
+                &icmpData[ETHER_LEN + IP_LEN + ICMP_LEN], size);
 
-        printf("%d\n", icmpResponse.un.echo.id);
+        //printf("%d\n", icmpResponse.un.echo.id);
         this->ethernetHeader = etherResponse;
         this->ipHeader = ipResponse;
         this->detail.icmp = icmpResponse;
@@ -94,6 +107,7 @@ namespace shared{
 
     }
 
+    //Equals operator
     Packet& Packet::operator=(Packet other){
         std::swap(this->detail,other.detail);
         std::swap(this->data, other.data);
@@ -105,7 +119,11 @@ namespace shared{
     }
 
     //IMPELEMENT
+    //Arp request
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
+        uint8_t broadcastAddress[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
+        uint8_t targetAddress[6] = {0, 0, 0, 0, 0, 0};
+
         //Don't ask
         detail.arp.ea_hdr.ar_hrd = 256;
         detail.arp.ea_hdr.ar_pro = 8;
@@ -117,7 +135,18 @@ namespace shared{
         //be used on broadcast
         //
         //Also be sure to copy all of the data into the data array.
+        memcpy(detail.arp.arp_sha, senderMAC, 6);
+        memcpy(detail.arp.arp_spa, senderIP, 4);
+        memcpy(detail.arp.arp_tha, targetAddress, 6);
+        memcpy(detail.arp.arp_tpa, targetIP, 4);
 
+        //Form the Ethernet Header
+        memcpy(ethernetHeader.ether_dhost, broadcastAddress,6);
+        memcpy(ethernetHeader.ether_shost, senderMAC, 6);
+        ethernetHeader.ether_type = htons(ARP_CODE);
+
+        memcpy(data, &ethernetHeader, ETHER_LEN);
+        memcpy(&data[ETHER_LEN], &detail.arp, ARP_LEN);
     }
 
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
@@ -199,6 +228,28 @@ namespace shared{
 
         return reply;
     }
+
+    void Packet::updateEthernetHeader(struct ForwardingData& forwardingData){
+        struct ether_header newHeader;
+
+        newHeader.ether_type = this->ethernetHeader.ether_type;
+        memcpy(newHeader.ether_shost, forwardingData.sourceMacAddress, 6);
+        memcpy(newHeader.ether_dhost, forwardingData.destinationMacAddress, 6);
+
+        //Copy the data into the data array
+        memcpy(this->data, &newHeader, ETHER_LEN);
+        
+    }
+
+    //This doesn't take into account the interface name and the socket used.
+    void Packet::generateForwardData(struct ForwardingData& result){ 
+        
+
+        memcpy(&result.destinationMacAddress, &detail.arp.arp_sha, 6);
+        memcpy(&result.sourceMacAddress, &detail.arp.arp_tha, 6);
+        memcpy(&result.ipAddress, &detail.arp.arp_spa, 4);
+    }
+
     void Packet::printARPData() {
         //Print the MAC Address? 
         struct ether_addr temp;
@@ -254,12 +305,10 @@ namespace shared{
         return this->packetType;
     }
 
-    char* Packet::getIPAddress() const{
-        char* returnIP = new char[4];
+    uint8_t* Packet::getIPAddress() const{
+        uint8_t* returnIP = new uint8_t[4];
         memcpy(returnIP, &ipHeader.daddr, 4);
         return returnIP;
     }
-
-
 }
 

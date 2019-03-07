@@ -1,6 +1,8 @@
 #ifndef                     PACKET_H
 #define                     PACKET_H
 
+#include "TableConstructs.h"
+
 #include <ifaddrs.h>
 #include <netpacket/packet.h>
 #include <netinet/ether.h>
@@ -17,8 +19,10 @@ namespace shared{
     } HeaderDetail;
     
     enum PacketType{
-        ARP,
-        ICMP,
+        ARP_REQUEST,
+        ARP_RESPONSE,
+        ICMP_REQUEST, 
+        ICMP_RESPONSE,
         OTHER
     };
 
@@ -45,14 +49,15 @@ namespace shared{
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
         Packet constructResponseICMP();
+        void updateEthernetHeader(struct ForwardingData& forwardData);
+        void generateForwardData(struct ForwardingData& result);
         Packet& operator=(Packet other);
 
         void printARPData();
 
-        //        ~Packet();
         PacketType getType() const;
 
-        char* getIPAddress() const;
+        uint8_t* getIPAddress() const;
 
     private:
         HeaderDetail detail;
@@ -67,7 +72,7 @@ namespace shared{
 
         bool equalIPs(uint8_t* rhs, uint8_t* lhs);
         static constexpr unsigned long ARP_CODE = 0x0806;
-        static constexpr unsigned long ICMP_CODE = 0x0800;
+        static constexpr unsigned long IP_CODE = 0x0800;
         static constexpr unsigned char ETHER_LEN = 14;
         static constexpr unsigned char IP_LEN = 20;
         static constexpr unsigned char ARP_LEN = 28;

@@ -1,5 +1,7 @@
 #include "Packet.h"
-#include "RoutingTable.h"
+#include "RoutingManager.h"
+#include "TableConstructs.h"
+
 
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
@@ -13,9 +15,11 @@
 #include <arpa/inet.h>
 #include <vector>
 #include <string>
+#include <iterator>
+#include <algorithm>
+#include <queue>
 
 
-typedef int SocketFD;
 int main(int argc, char** argv){
     //Define 2 Packet objects one for reciving, the other for sending.
     shared::Packet sendPacket;
@@ -23,9 +27,11 @@ int main(int argc, char** argv){
 
     //A vector of socket file descriptors and a select set.
     std::vector<SocketFD> sockets;
+    std::vector<std::string> interfaces;
     fd_set socketSetMaster;
     std::string tableFile;
-
+    //Holds packets temporarily until they can be forwarded
+    std::queue<shared::Packet> holdingQueue;
 
     //Get the routing table 
     if(argc == 2){
@@ -36,7 +42,8 @@ int main(int argc, char** argv){
         return 1;
     }
 
-    shared::RoutingTable routeTable(tableFile);
+    shared::RoutingManager routingManager(argv[1]);
+
 
     SocketFD packet_socket;
     //get list of interface addresses. This is a linked list. Next
@@ -48,7 +55,7 @@ int main(int argc, char** argv){
     //with which MAC address.
     struct ifaddrs *ifaddr, *tmp;
     if(getifaddrs(&ifaddr)==-1){
-        perror("getifaddrs");
+       perror("getifaddrs");
         return 1;
     }
     //have the list, loop over the list
@@ -59,6 +66,8 @@ int main(int argc, char** argv){
         //about those for the purpose of enumerating interfaces. We can
         //use the AF_INET addresses in this list for example to get a list
         //of our own IP addresses
+        //
+        //Add a socket on the mac address and add the address to the routing manager.
         if(tmp->ifa_addr->sa_family==AF_PACKET && strcmp(tmp->ifa_name, "lo") != 0){
             printf("Interface: %s\n",tmp->ifa_name);
             printf("Creating Socket on interface %s\n",tmp->ifa_name);
@@ -86,15 +95,23 @@ int main(int argc, char** argv){
 
             //Push the new socket to the vector and put it onto the fd_set data stack.
             sockets.push_back(packet_socket);
+            interfaces.push_back(tmp->ifa_name);
+
+            //Add the mac addr to the routing manager as well as the socket 
+            routingManager.addMacMapping(tmp->ifa_name, 
+                    ((struct sockaddr_ll*)tmp->ifa_addr)->sll_addr);
+
+            //Add the inteface name and the socket mapping
+            routingManager.addSocketMapping(tmp->ifa_name, packet_socket);
+
             FD_SET(sockets.back(), &socketSetMaster);
         }
         //Add a home address if possible.
         else if(tmp->ifa_addr->sa_family == AF_INET){
             struct sockaddr_in* homeAddress = (struct sockaddr_in*)tmp->ifa_addr;
-            char ipAddress[4];
+            uint8_t ipAddress[4];
             memcpy(ipAddress,&homeAddress->sin_addr.s_addr, 4);
-            routeTable.addHomeAddr(ipAddress);
-
+            routingManager.addIpMapping(tmp->ifa_name, ipAddress);
         }
     }
     //loop and recieve packets. We are only looking at one interface,
@@ -113,32 +130,49 @@ int main(int argc, char** argv){
 
         for(auto socket_it = sockets.begin(); socket_it < sockets.end(); ++socket_it){
             if(FD_ISSET(*socket_it, &cycle)){
-                try{
-                    //we can use recv, since the addresses are in the packet, but we
-                    //use recvfrom because it gives us an easy way to determine if
-                    //this packet is incoming or outgoing (when using ETH_P_ALL, we
-                    //see packets in both directions. Only outgoing can be seen when
-                    //using a packet socket with some specific protocol)
-                    int n = recvfrom(*socket_it, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
-                    //ignore outgoing packets (we can't disable some from being sent
-                    //by the OS automatically, for example ICMP port unreachable
-                    //messages, so we will just ignore them here)
-                    if(recvaddr.sll_pkttype==PACKET_OUTGOING)
-                        continue;
-                    //start processing all others
-                    printf("Got a %d byte packet\n", n);
+                //we can use recv, since the addresses are in the packet, but we
+                //use recvfrom because it gives us an easy way to determine if
+                //this packet is incoming or outgoing (when using ETH_P_ALL, we
+                //see packets in both directions. Only outgoing can be seen when
+                //using a packet socket with some specific protocol)
+                int n = recvfrom(*socket_it, buf, 1500,0,(struct sockaddr*)&recvaddr, &recvaddrlen);
 
+                //ignore outgoing packets (we can't disable some from being sent
+                //by the OS automatically, for example ICMP port unreachable
+                //messages, so we will just ignore them here)
+                if(recvaddr.sll_pkttype==PACKET_OUTGOING){
+                    continue;
+                }
+                else{
+                    //start processing all others
+                    printf("\n\nGot a %d byte packet\n", n);
                     recivePacket = shared::Packet(buf);
 
-                    //Check if it is for us
-                    if(routeTable.isHome(recivePacket.getIPAddress())){
-                        if(recivePacket.getType() == shared::ARP){
-                            printf("Got an ARP packet\n");
-                            //            sendPacket.printARPData();
-                            sendPacket = recivePacket.constructResponseARP(ifaddr);
-                            send(*socket_it, sendPacket.data, 42, 0);
-                        }
-                        else if(recivePacket.getType() == shared::ICMP){
+                    //ARP always works so this should be fine. 
+                    if(recivePacket.getType() == shared::ARP_REQUEST){
+                        printf("Got an ARP Request packet\n");
+
+                        sendPacket = recivePacket.constructResponseARP(ifaddr);
+                        send(*socket_it, sendPacket.data, 42, 0);
+                    }
+                    else if(recivePacket.getType() == shared::ARP_RESPONSE){
+                        printf("Got an ARP response packet \n");
+
+                        struct shared::ForwardingData temp;
+                        recivePacket.generateForwardData(temp);
+
+                        temp.sendingSocket = *socket_it;
+                        temp.interfaceName = routingManager.findRouting(temp.ipAddress);
+
+                        //Add to forwarding List
+                        routingManager.addForwarding(temp);
+                        continue;
+                    }
+                    //Check if the packet is for us.
+                    //Do stuff with it if it is.
+                    else if(routingManager.isHomeIp(recivePacket.getIPAddress())){
+
+                        if(recivePacket.getType() == shared::ICMP_REQUEST){
                             printf("Got an ICMP packet\n");
                             sendPacket = recivePacket.constructResponseICMP();
                             send(*socket_it, sendPacket.data, 98, 0);
@@ -146,29 +180,63 @@ int main(int argc, char** argv){
                     }
                     //Its not for us so we look to forward it.
                     else{
+                        uint8_t* destinationIP = recivePacket.getIPAddress();
+                        //Check if we have a mapping already
+                        
+                        struct shared::ForwardingData* forward = 
+                            routingManager.findForwarding(destinationIP);
 
-                    }
-                }
-                catch(int e){
-                    if(e == 1){
-
-                        printf("Bad packet was recived and ignored\n");
-                    }
-                    else if(e == 2){
-                        printf("Interface was not found for response\n");
+                        if(forward == nullptr){
+                            //We have forwarding continue for now
+                            continue;
+                            //TODO implement
+                        }
+                        
+                        //No mapping find the interface assocaiated with the prefix
+                        std::string targetInterface = routingManager.findRouting(destinationIP);
+                        //If we don't find anything in the table just discard the packet right now.
+                        if(targetInterface == ""){
+                            continue;
+                        }
+                        //Get everything ready to send out an arp request.
+                        else{
+                            uint8_t* senderIP = routingManager.getIpAddress(targetInterface);
+                            uint8_t* senderMac = routingManager.getMacAddress(targetInterface);
+                            uint8_t* targetIP = destinationIP;
+                            sendPacket = shared::Packet(senderIP, senderMac, targetIP);
+                            //TODO Send the arp packet out and put the recived on in a queue until 
+                            //the arp is recived.
+                            holdingQueue.push(recivePacket);
+                            SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
+                            send(sendingSocket, sendPacket.data, 42, 0);
+                            printf("Arp request was made and sent\n");
+                            continue;
+                        }
                     }
                 }
             }
         }
+        //Send all of the packets still in the queue that we can. 
+        //A packet can only be sent if there is a forwarding mapping 
+        int currentSize = holdingQueue.size();
+        for(int i = 0; i < currentSize; ++i){
+            shared::Packet queuePacket = holdingQueue.front();
+            holdingQueue.pop();
 
-        //what else to do is up to you, you can send packets with send,
-        //just like we used for TCP sockets (or you can use sendto, but it
-        //is not necessary, since the headers, including all addresses,
-        //need to be in the buffer you are sending)
 
+            //Search for the mapping for a sending path if nothing comes up then push this back onto
+            //the queue
+            uint8_t* destinationIP = queuePacket.getIPAddress();
+            struct shared::ForwardingData* found = routingManager.findForwarding(destinationIP);
+            //We found a forwarding. change the ethernet header to update the source and dest.
+            if(found != nullptr){
+                queuePacket.updateEthernetHeader(*found);                
+            }
+        }
     }
     //free the interface list when we don't need it anymore
     freeifaddrs(ifaddr);
     //exit
     return 0;
 }
+
