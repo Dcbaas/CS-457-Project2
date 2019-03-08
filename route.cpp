@@ -55,7 +55,7 @@ int main(int argc, char** argv){
     //with which MAC address.
     struct ifaddrs *ifaddr, *tmp;
     if(getifaddrs(&ifaddr)==-1){
-       perror("getifaddrs");
+        perror("getifaddrs");
         return 1;
     }
     //have the list, loop over the list
@@ -182,7 +182,11 @@ int main(int argc, char** argv){
                     else{
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
-                        
+
+                        //Would this be going to a router? 
+                        destinationIP = (routingManager.hasRouterForward(destinationIP)) ?
+                            routingManager.getRouterForward(destinationIP) : destinationIP;
+
                         struct shared::ForwardingData* forward = 
                             routingManager.findForwarding(destinationIP);
 
@@ -195,7 +199,7 @@ int main(int argc, char** argv){
                             send(sendingSocket, recivePacket.data, n, 0);
                             continue;
                         }
-                        
+
                         //No mapping, find the interface assocaiated with the prefix
                         std::string targetInterface = routingManager.findRouting(destinationIP);
                         //If we don't find anything in the table just discard the packet right now.
