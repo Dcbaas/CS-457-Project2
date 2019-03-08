@@ -232,6 +232,10 @@ int main(int argc, char** argv){
             //Search for the mapping for a sending path if nothing comes up then push this back onto
             //the queue
             uint8_t* destinationIP = queuePacket.getIPAddress();
+
+            //Is this packet going to a router or not if it is, then change the destination ip.
+            destinationIP = (routingManager.hasRouterForward(destinationIP)) ? 
+                routingManager.getRouterForward(destinationIP) : destinationIP;
             struct shared::ForwardingData* found = routingManager.findForwarding(destinationIP);
             //We found a forwarding. change the ethernet header to update the source and dest.
             if(found != nullptr){
