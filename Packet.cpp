@@ -20,7 +20,7 @@
 
 namespace shared{ 
     //Constructs a recived packet
-    Packet::Packet(char* data){
+    Packet::Packet(uint8_t* data){
         memcpy(this->data, data, 1500);
 
         //Construct ethernetheader
@@ -92,7 +92,7 @@ namespace shared{
 
     //ICMP response header. 
     Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
-            struct icmphdr& icmpResponse, char* icmpData, char size){
+            struct icmphdr& icmpResponse, uint8_t* icmpData, uint8_t size){
         memcpy(this->data, &etherResponse, ETHER_LEN);
         memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
         memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
@@ -238,12 +238,12 @@ namespace shared{
 
         //Copy the data into the data array
         memcpy(this->data, &newHeader, ETHER_LEN);
-        
+
     }
 
     //This doesn't take into account the interface name and the socket used.
     void Packet::generateForwardData(struct ForwardingData& result){ 
-        
+
 
         memcpy(&result.destinationMacAddress, &detail.arp.arp_sha, 6);
         memcpy(&result.sourceMacAddress, &detail.arp.arp_tha, 6);
@@ -313,6 +313,32 @@ namespace shared{
 
     unsigned short Packet::getPacketLength() const {
         return ETHER_LEN + htons(ipHeader.tot_len);
+    }
+
+    bool Packet::validIpChecksum(){
+        constexpr int HEADER_SECTIONS = 10;
+
+        uint8_t* buffer = (uint8_t*)&data[ETHER_LEN];
+
+        register unsigned long sum = 0;
+
+        int count = HEADER_SECTIONS;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        uint16_t result = (sum & 0xFFFF);
+        printf("IP Checksum: %x\n", result); 
+
+        //TODO do the actual check
+        return false;
     }
 }
 

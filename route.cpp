@@ -121,7 +121,7 @@ int main(int argc, char** argv){
     printf("Ready to recieve now\n");
     while(1){
         int packet_socket = sockets.front();
-        char buf[1500];
+        uint8_t buf[1500];
         struct sockaddr_ll recvaddr;
         fd_set cycle = socketSetMaster;
         unsigned int recvaddrlen=sizeof(struct sockaddr_ll);
