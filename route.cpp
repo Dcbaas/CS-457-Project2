@@ -194,10 +194,9 @@ int main(int argc, char** argv){
                             //Send the socket
                             send(sendingSocket, recivePacket.data, n, 0);
                             continue;
-                            //TODO implement
                         }
                         
-                        //No mapping find the interface assocaiated with the prefix
+                        //No mapping, find the interface assocaiated with the prefix
                         std::string targetInterface = routingManager.findRouting(destinationIP);
                         //If we don't find anything in the table just discard the packet right now.
                         if(targetInterface == ""){
@@ -207,7 +206,8 @@ int main(int argc, char** argv){
                         else{
                             uint8_t* senderIP = routingManager.getIpAddress(targetInterface);
                             uint8_t* senderMac = routingManager.getMacAddress(targetInterface);
-                            uint8_t* targetIP = destinationIP;
+                            uint8_t* targetIP = (routingManager.hasRouterForward(destinationIP)) ? 
+                                routingManager.getRouterForward(destinationIP) : destinationIP;
                             sendPacket = shared::Packet(senderIP, senderMac, targetIP);
                             //TODO Send the arp packet out and put the recived on in a queue until 
                             //the arp is recived.

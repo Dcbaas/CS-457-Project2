@@ -31,6 +31,9 @@ namespace shared{
         //Return an empty string if nothing is found.
         std::string findRouting(uint8_t* ipAddress);
 
+        bool hasRouterForward(uint8_t* ipAddress);
+        uint8_t* getRouterForward(uint8_t* ipAddress);
+
         //TODO make these all use refrences. 
         uint8_t* getMacAddress(std::string interfaceName) const;
         uint8_t* getIpAddress(std::string interfaceName) const; 
