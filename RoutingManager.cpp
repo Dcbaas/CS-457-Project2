@@ -33,14 +33,16 @@ namespace shared{
             int prefixLength = std::stoi(prefixSplit[1]);
 
             uint8_t* forwardingIP = new uint8_t[4];
-            bool hasForwardIP = false; 
             //Extract the prefix
             parseIP(prefixSplit[0], prefix);
 
             //Extract the forwarding ip if there is something there.
             if(split[1] != "-"){
                 parseIP(split[1], forwardingIP);
-                hasForwardIP = true;
+            }
+            else{
+                forwardingIP[0] = '-';
+                
             }
 
             struct TableItem tableItem;
@@ -93,6 +95,25 @@ namespace shared{
         }
         //Return an empty string on failing to find anything;
         return "";
+    }
+
+    bool RoutingManager::hasRouterForward(uint8_t* ipAddress){
+        for(auto tableIt= routingTable.begin(); tableIt != routingTable.end(); ++tableIt){
+            if(prefixCompare(ipAddress, tableIt->prefix, tableIt->prefixLength)){
+                return !(tableIt->fowardingAddress[0] == '-');
+            }
+        }
+        return false;
+    }
+
+    uint8_t* RoutingManager::getRouterForward(uint8_t* ipAddress){
+        for(auto tableIt= routingTable.begin(); tableIt != routingTable.end(); ++tableIt){
+            if(prefixCompare(ipAddress, tableIt->prefix, tableIt->prefixLength)){
+                return tableIt->fowardingAddress;
+            }
+        }
+
+        return nullptr;
     }
 
     void RoutingManager::addMacMapping(std::string interfaceName, uint8_t* macAddress){
