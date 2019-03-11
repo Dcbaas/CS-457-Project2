@@ -36,7 +36,8 @@ int main(int argc, char** argv){
     //Holds packets temporarily until they can be forwarded
     //Also hold a counter that tracks how many times a packet has not been sent
     std::queue<shared::Packet> holdingQueue;
-    std::queue<uint8_t> failureTrack;
+    std::queue<uint8_t> failureTracker;
+    std::queue<SocketFD> sendingOrder;
 
     //Get the routing table 
     if(argc == 2){
@@ -188,7 +189,7 @@ int main(int argc, char** argv){
 
                         //First: Is the checksum correct if not then do something.
                         if(!recivePacket.validIpChecksum()){
-                            //TODO implement
+                            //Drop the packet
                             continue;
                         }
 
@@ -196,13 +197,13 @@ int main(int argc, char** argv){
                         //Decrement the ttl
                         recivePacket.decTTL();
                         if(recivePacket.zeroedTTL()){
-                            //TODO implement
                             uint8_t errorType = 11;
                             uint8_t errorCode = 0;
 
-                            //sendPacket = shared::Packet(errorMacHeader, errorIpHeader, errorType, 
-                             //       errorCode, recivePacket.data);
-                            
+                            sendPacket = shared::Packet(recivePacket, errorType, errorCode);
+
+                            send(*socket_it, sendPacket.data, sendPacket.getPacketLength(), 0);
+
                             continue;
                         }
 
@@ -233,6 +234,12 @@ int main(int argc, char** argv){
                         //If we don't find anything in the table send an ICMP error 
                         if(targetInterface == ""){
                             //TODO implement
+                            uint8_t errorType = 3; 
+                            uint8_t errorCode = 0;
+
+                            sendPacket = shared::Packet(recivePacket, errorType, errorCode);
+
+                            send(*socket_it, sendPacket.data, sendPacket.getPacketLength(), 0);
                             continue;
                         }
                         //Get everything ready to send out an arp request.
@@ -245,7 +252,8 @@ int main(int argc, char** argv){
                             //TODO Send the arp packet out and put the recived on in a queue until 
                             //the arp is recived.
                             holdingQueue.push(recivePacket);
-                            failureTrack.push(0);
+                            failureTracker.push(1);
+                            sendingOrder.push(*socket_it);
                             SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
                             send(sendingSocket, sendPacket.data, 42, 0);
                             printf("Arp request was made and sent\n");
@@ -255,12 +263,21 @@ int main(int argc, char** argv){
                 }
             }
         }
-        //Send all of the packets still in the queue that we can. 
+        //Send all of the packets still in the queue.
         //A packet can only be sent if there is a forwarding mapping 
         int currentSize = holdingQueue.size();
         for(int i = 0; i < currentSize; ++i){
             shared::Packet queuePacket = holdingQueue.front();
             holdingQueue.pop();
+
+            uint8_t attempts = failureTracker.front();
+            ++attempts;
+
+            printf("Attempt: %d\n", attempts);
+            failureTracker.pop();
+
+            SocketFD returningSocket = sendingOrder.front();
+            sendingOrder.pop();
 
 
             //Search for the mapping for a sending path if nothing comes up then push this back onto
@@ -282,9 +299,22 @@ int main(int argc, char** argv){
             }
             else{
                 //TODO change this to create send an ERROR ICMP and just get rid of the packet.
+                if(attempts > 3){
 
-                //Push the packet back onto the queue wait for next cycle. 
-                holdingQueue.push(queuePacket);
+                    uint8_t errorType = 3; 
+                    uint8_t errorCode = 1;
+
+                    sendPacket= shared::Packet(recivePacket, errorType, errorCode);
+
+                    send(returningSocket, sendPacket.data, sendPacket.getPacketLength(),0);
+
+                }
+                else{
+                    //Push the packet back onto the queue wait for next cycle. 
+                    holdingQueue.push(queuePacket);
+                    failureTracker.push(attempts);
+                    sendingOrder.push(returningSocket);
+                }
             }
         }
     }
