@@ -71,6 +71,7 @@ namespace shared{
         //Recalculates the checksum
         void calculateIpChecksum();
 
+        void decTTL();
         bool zeroedTTL() const;
 
     private:

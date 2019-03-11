@@ -43,9 +43,7 @@ namespace shared{
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
-            //Subtract the ttl. Record the checksum and set the value to 0 in struct.
-            ipHeader.ttl -= 1;
-            recordedIpChecksum = ipHeader.check;
+            //Record the checksum and set the value to 0 in struct.
             ipHeader.check = 0;
 
             //Update the data to have the new ttl;
@@ -170,7 +168,7 @@ namespace shared{
         //TODO create icmp checksum accross the icmp header and data.
 
     }
-    
+
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
         //Remember that IPs only have 4 elements while MAC addresses have 6
         //The target IP we have and the MAC we are looking for.
@@ -369,7 +367,7 @@ namespace shared{
         constexpr int HEADER_SECTIONS = 10;
 
         //The start of the ip header
-        uint8_t* buffer = (uint8_t*)&this->data[ETHER_LEN];
+        uint8_t* buffer = &this->data[ETHER_LEN];
 
         register unsigned long sum = 0;
 
@@ -386,11 +384,43 @@ namespace shared{
         }
 
         ipHeader.check = (sum & 0xFFFF);
-        printf("IP Checksum: %x\n", ipHeader.check);
+        //printf("IP Checksum: %x\n", ipHeader.check);
+    }
+
+    void Packet::decTTL(){
+        //Subtract the ttl and update the data.
+        ipHeader.ttl -= 1;
+        memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
     }
 
     bool Packet::zeroedTTL() const{
         return ipHeader.ttl < 1;
+    }
+
+    void Packet::calculateIcmpChecksum(){
+        //Calculate the total length needed 
+        int icmpLen = ipHeader.tot_len - IP_LEN;
+
+        //The count is the length of the icmp data and header * the number of bits in a byte
+        //divided by 16 bits to do the checksum.
+        int count = (ipHeader.tot_len - IP_LEN) * 8 / 16;
+
+        //Start at the beginning of the icmp header and go to the end.
+        uint8_t* buffer = &this->data[ETHER_LEN + IP_LEN];
+
+        register unsigned long sum = 0;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        detail.icmp.checksum = (sum & 0xFFFF);
     }
 }
 
