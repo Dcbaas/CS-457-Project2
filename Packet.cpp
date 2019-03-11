@@ -157,21 +157,45 @@ namespace shared{
 
     //ICMP error packet.
     //Error data is the raw data from the error packet in question
-    Packet::Packet(struct ether_header& etherError, struct iphdr& ipError, uint8_t errorType,
-            uint8_t errorCode, uint8_t* errorData) : ethernetHeader(etherError), ipHeader(ipError){
+    Packet::Packet(Packet& other, uint8_t errorType, uint8_t errorCode){
+
+        //Create the new ethernet header
+        memcpy(&ethernetHeader.ether_dhost, &other.ethernetHeader.ether_shost, 6);
+        memcpy(&ethernetHeader.ether_shost, &other.ethernetHeader.ether_dhost, 6);
+        memcpy(&ethernetHeader.ether_type, &other.ethernetHeader.ether_type, sizeof(uint16_t));
+
+        //Copy ethernet header to data
+        memcpy(data, &ethernetHeader, ETHER_LEN);
+
+
+        //Create a new ip header
+        memcpy(&ipHeader, &other.ipHeader, IP_LEN);
+
+        //Change the source, destination, reset ttl and checksum.
+        memcpy(&ipHeader.saddr, &other.ipHeader.daddr, 4);
+        memcpy(&ipHeader.daddr, &other.ipHeader.saddr, 4);
+        ipHeader.ttl = 64;
+        ipHeader.check = 0;
+
+        //Copy the new header in and recalculate checksum. 
+        memcpy(&data[ETHER_LEN], &ipHeader, IP_LEN);
+        calculateIpChecksum();
+
         detail.icmp.type = errorType;
         detail.icmp.code = errorCode;
 
-        //TODO is this right?
+        //Ensure default values
+        //TODO do I need this? Isn't it already set to default values. 
         detail.icmp.un.echo.id = 0;
         detail.icmp.un.echo.sequence = 0;
 
-        //Add the ip header + 8 bytes in the data section
-        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &errorData[ETHER_LEN], IP_LEN + 8);
+        //Copy the header to the data
+        memcpy(&data[ETHER_LEN + IP_LEN], &detail.icmp, ICMP_LEN);
 
-        //TODO create Ip checksum 
-        //TODO create icmp checksum accross the icmp header and data.
+        //Add the ip header + 8 bytes of the bad packet into the data section
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &other.data[ETHER_LEN], IP_LEN + 8);
 
+        calculateIcmpChecksum();
     }
 
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
@@ -375,7 +399,7 @@ namespace shared{
         //The start of the ip header
         //
         //TODO change to u_short
-        uint8_t* buffer = &this->data[ETHER_LEN];
+        uint16_t*  buffer = (uint16_t*)&data[ETHER_LEN];
 
         register unsigned long sum = 0;
 
@@ -415,7 +439,7 @@ namespace shared{
 
         //Start at the beginning of the icmp header and go to the end.
         //TODO change to unsigned short
-        uint8_t* buffer = &this->data[ETHER_LEN + IP_LEN];
+        uint16_t* buffer = (uint16_t*)&data[ETHER_LEN + IP_LEN];
 
         register unsigned long sum = 0;
 

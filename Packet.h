@@ -47,8 +47,8 @@ namespace shared{
         Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP);
 
         //Construct an error ICMP packet
-        Packet(struct ether_header& etherError, struct iphdr& ipError, uint8_t errorType, 
-                uint8_t errorCode, uint8_t* errorData);
+        Packet(Packet& other, uint8_t errorType, 
+                uint8_t errorCode);
 
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);

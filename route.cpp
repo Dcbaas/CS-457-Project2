@@ -32,8 +32,11 @@ int main(int argc, char** argv){
     std::vector<std::string> interfaces;
     fd_set socketSetMaster;
     std::string tableFile;
+
     //Holds packets temporarily until they can be forwarded
+    //Also hold a counter that tracks how many times a packet has not been sent
     std::queue<shared::Packet> holdingQueue;
+    std::queue<uint8_t> failureTrack;
 
     //Get the routing table 
     if(argc == 2){
@@ -186,7 +189,6 @@ int main(int argc, char** argv){
                         //First: Is the checksum correct if not then do something.
                         if(!recivePacket.validIpChecksum()){
                             //TODO implement
-                            printf("Packet failed checksum");
                             continue;
                         }
 
@@ -195,9 +197,17 @@ int main(int argc, char** argv){
                         recivePacket.decTTL();
                         if(recivePacket.zeroedTTL()){
                             //TODO implement
+                            uint8_t errorType = 11;
+                            uint8_t errorCode = 0;
+
+                            //sendPacket = shared::Packet(errorMacHeader, errorIpHeader, errorType, 
+                             //       errorCode, recivePacket.data);
+                            
                             continue;
                         }
 
+                        //Its passed the checks update the checksum after changing ttl
+                        recivePacket.calculateIpChecksum();
 
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
@@ -235,6 +245,7 @@ int main(int argc, char** argv){
                             //TODO Send the arp packet out and put the recived on in a queue until 
                             //the arp is recived.
                             holdingQueue.push(recivePacket);
+                            failureTrack.push(0);
                             SocketFD sendingSocket = routingManager.getSocketName(targetInterface);
                             send(sendingSocket, sendPacket.data, 42, 0);
                             printf("Arp request was made and sent\n");
@@ -272,10 +283,8 @@ int main(int argc, char** argv){
             else{
                 //TODO change this to create send an ERROR ICMP and just get rid of the packet.
 
-
-                //INVALID WILL CHANGE.
                 //Push the packet back onto the queue wait for next cycle. 
-                //holdingQueue.push(queuePacket);
+                holdingQueue.push(queuePacket);
             }
         }
     }
@@ -285,12 +294,3 @@ int main(int argc, char** argv){
     return 0;
 }
 
-//Needs to create an header that returns the 
-void createEtherErrorHeader(shared::Packet& errorPacket, struct ether_header& header){
-
-    return;
-}
-
-void createIpErrorHeader(shared::Packet& errorPacket, struct iphdr header){
-    return;
-}
