@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <queue>
 
+void createEtherErrorHeader(shared::Packet& errorPacket, struct ether_header& header);
+void createIpErrorHeader(shared::Packet& errorPacket, struct iphdr& header);
 
 int main(int argc, char** argv){
     //Define 2 Packet objects one for reciving, the other for sending.
@@ -181,19 +183,22 @@ int main(int argc, char** argv){
                     //Its not for us so we look to forward it.
                     else{
 
-                        //First: has the ttl been exausted. if yes send an error 
+                        //First: Is the checksum correct if not then do something.
+                        if(!recivePacket.validIpChecksum()){
+                            //TODO implement
+                            printf("Packet failed checksum");
+                            continue;
+                        }
+
+                        //Second: has the ttl been exausted. if yes send an error 
+                        //Decrement the ttl
+                        recivePacket.decTTL();
                         if(recivePacket.zeroedTTL()){
                             //TODO implement
                             continue;
                         }
 
-                        //Second: Is the checksum correct if not then do something.
-                        if(!recivePacket.validIpChecksum()){
-                            //TODO implement
-                            continue;
-                        }
 
-                        
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
                         //Would this be going to a router? 
@@ -266,8 +271,8 @@ int main(int argc, char** argv){
             }
             else{
                 //TODO change this to create send an ERROR ICMP and just get rid of the packet.
-                
-               
+
+
                 //INVALID WILL CHANGE.
                 //Push the packet back onto the queue wait for next cycle. 
                 //holdingQueue.push(queuePacket);
@@ -280,3 +285,12 @@ int main(int argc, char** argv){
     return 0;
 }
 
+//Needs to create an header that returns the 
+void createEtherErrorHeader(shared::Packet& errorPacket, struct ether_header& header){
+
+    return;
+}
+
+void createIpErrorHeader(shared::Packet& errorPacket, struct iphdr header){
+    return;
+}

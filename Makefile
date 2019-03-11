@@ -1,6 +1,9 @@
 all: Packet.o route.o RoutingManager.o TableConstructs.o
 	g++ route.o Packet.o RoutingManager.o TableConstructs.o -o vrouter -std=c++11 -g
 
+release:
+	g++ route.cpp Packet.cpp RoutingManager.cpp TableConstructs.cpp -o vrouter -std=c++11 -O3
+
 Packet.o: Packet.cpp
 	g++ Packet.cpp -c -std=c++11 -g
 
