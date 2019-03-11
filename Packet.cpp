@@ -124,6 +124,7 @@ namespace shared{
         std::swap(this->ethernetHeader, other.ethernetHeader);
         std::swap(this->ipHeader, other.ipHeader);
         std::swap(this->packetType, other.packetType);
+        std::swap(this->recordedIpChecksum, other.recordedIpChecksum);
 
         return *this;
     }
