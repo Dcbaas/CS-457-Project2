@@ -44,9 +44,12 @@ namespace shared{
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
             //Record the checksum and set the value to 0 in struct.
+            this->recordedIpChecksum = ipHeader.check;
             ipHeader.check = 0;
 
-            //Update the data to have the new ttl;
+            printf("Recorded IP Check: %x\n", recordedIpChecksum);
+
+            //Update the data to have the zeroed checksum;
             memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
 
             //TODO only do icmp stuff if of type icmp
@@ -339,7 +342,7 @@ namespace shared{
         constexpr int HEADER_SECTIONS = 10;
 
         //The start of the ip header
-        uint8_t* buffer = (uint8_t*)&this->data[ETHER_LEN];
+        uint16_t* buffer = (uint16_t*)&this->data[ETHER_LEN];
 
         register unsigned long sum = 0;
 
@@ -355,8 +358,9 @@ namespace shared{
             }
         }
 
-        uint16_t result = (sum & 0xFFFF);
+        uint16_t result = ~(sum & 0xFFFF);
         printf("IP Checksum: %x\n", result); 
+        printf("Recorded Checksum: %x\n", recordedIpChecksum);
 
         //TODO do the actual check
         return result == recordedIpChecksum;
@@ -367,6 +371,8 @@ namespace shared{
         constexpr int HEADER_SECTIONS = 10;
 
         //The start of the ip header
+        //
+        //TODO change to u_short
         uint8_t* buffer = &this->data[ETHER_LEN];
 
         register unsigned long sum = 0;
@@ -383,7 +389,7 @@ namespace shared{
             }
         }
 
-        ipHeader.check = (sum & 0xFFFF);
+        ipHeader.check = ~(sum & 0xFFFF);
         //printf("IP Checksum: %x\n", ipHeader.check);
     }
 
@@ -406,6 +412,7 @@ namespace shared{
         int count = (ipHeader.tot_len - IP_LEN) * 8 / 16;
 
         //Start at the beginning of the icmp header and go to the end.
+        //TODO change to unsigned short
         uint8_t* buffer = &this->data[ETHER_LEN + IP_LEN];
 
         register unsigned long sum = 0;
@@ -420,7 +427,7 @@ namespace shared{
             }
         }
 
-        detail.icmp.checksum = (sum & 0xFFFF);
+        detail.icmp.checksum = ~(sum & 0xFFFF);
     }
 }
 
