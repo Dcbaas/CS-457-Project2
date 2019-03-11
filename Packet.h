@@ -29,10 +29,10 @@ namespace shared{
     class Packet{
     public:
         //Won't take a constexpr below?
-        char data[1500];
+        uint8_t data[1500];
 
         //Standard Constructor to parse a packet
-        Packet(char* data);
+        Packet(uint8_t* data);
 
         //Default constructor
         Packet();
@@ -41,10 +41,14 @@ namespace shared{
         Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP, uint8_t* targetMAC, Packet& request);
 
         //Construct an ICMP response header 
-        Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, struct icmphdr& icmpResponse, char* icmpData, char size);
+        Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, struct icmphdr& icmpResponse, uint8_t* icmpData, uint8_t size);
 
         //Construct an ARP request header
         Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP);
+
+        //Construct an error ICMP packet
+        Packet(struct ether_header& etherError, struct iphdr& ipError, uint8_t errorType, 
+                uint8_t errorCode, uint8_t* errorData);
 
 
         Packet constructResponseARP(struct ifaddrs* interfaceList);
@@ -61,11 +65,23 @@ namespace shared{
 
         unsigned short getPacketLength() const;
 
+        //Verifies a recived packets checksum
+        bool validIpChecksum();
+
+        //Recalculates the checksum
+        void calculateIpChecksum();
+
+        void decTTL();
+        bool zeroedTTL() const;
+
     private:
         HeaderDetail detail;
         struct ether_header ethernetHeader;
         struct iphdr ipHeader;
         PacketType packetType;
+
+        uint16_t recordedIpChecksum;
+        uint16_t calculatedIpChecksum;
 
         void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
         void transferIP(uint8_t* responseIP, uint8_t* requestIP);
@@ -73,6 +89,9 @@ namespace shared{
         struct iphdr constructIPResponseHdr();
 
         bool equalIPs(uint8_t* rhs, uint8_t* lhs);
+
+        void calculateIcmpChecksum();
+
         static constexpr unsigned long ARP_CODE = 0x0806;
         static constexpr unsigned long IP_CODE = 0x0800;
         static constexpr unsigned char ETHER_LEN = 14;

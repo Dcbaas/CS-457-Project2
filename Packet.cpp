@@ -20,7 +20,7 @@
 
 namespace shared{ 
     //Constructs a recived packet
-    Packet::Packet(char* data){
+    Packet::Packet(uint8_t* data){
         memcpy(this->data, data, 1500);
 
         //Construct ethernetheader
@@ -42,8 +42,18 @@ namespace shared{
             }
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
-            //ICMP stuff
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
+            //Record the checksum and set the value to 0 in struct.
+            memcpy(&this->recordedIpChecksum, &ipHeader.check, 2);
+            printf("ipHeaderCheck: %x\n", ipHeader.check);
+            ipHeader.check = 0;
+
+            printf("Recorded IP Check: %x\n", recordedIpChecksum);
+
+            //Update the data to have the zeroed checksum;
+            memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
+
+            //TODO only do icmp stuff if of type icmp
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
             packetType = ICMP_REQUEST;
         }
@@ -92,7 +102,7 @@ namespace shared{
 
     //ICMP response header. 
     Packet::Packet(struct ether_header& etherResponse, struct iphdr& ipResponse, 
-            struct icmphdr& icmpResponse, char* icmpData, char size){
+            struct icmphdr& icmpResponse, uint8_t* icmpData, uint8_t size){
         memcpy(this->data, &etherResponse, ETHER_LEN);
         memcpy(&this->data[ETHER_LEN], &ipResponse, IP_LEN);
         memcpy(&this->data[ETHER_LEN + IP_LEN], &icmpResponse, ICMP_LEN);
@@ -114,11 +124,11 @@ namespace shared{
         std::swap(this->ethernetHeader, other.ethernetHeader);
         std::swap(this->ipHeader, other.ipHeader);
         std::swap(this->packetType, other.packetType);
+        std::swap(this->recordedIpChecksum, other.recordedIpChecksum);
 
         return *this;
     }
 
-    //IMPELEMENT
     //Arp request
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
         uint8_t broadcastAddress[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
@@ -131,10 +141,6 @@ namespace shared{
         detail.arp.ea_hdr.ar_pln = 4;
         detail.arp.ea_hdr.ar_op = 256;
 
-        //Todo: Implement the rest of the arp header and make a proper Ethernet header that can
-        //be used on broadcast
-        //
-        //Also be sure to copy all of the data into the data array.
         memcpy(detail.arp.arp_sha, senderMAC, 6);
         memcpy(detail.arp.arp_spa, senderIP, 4);
         memcpy(detail.arp.arp_tha, targetAddress, 6);
@@ -147,6 +153,25 @@ namespace shared{
 
         memcpy(data, &ethernetHeader, ETHER_LEN);
         memcpy(&data[ETHER_LEN], &detail.arp, ARP_LEN);
+    }
+
+    //ICMP error packet.
+    //Error data is the raw data from the error packet in question
+    Packet::Packet(struct ether_header& etherError, struct iphdr& ipError, uint8_t errorType,
+            uint8_t errorCode, uint8_t* errorData) : ethernetHeader(etherError), ipHeader(ipError){
+        detail.icmp.type = errorType;
+        detail.icmp.code = errorCode;
+
+        //TODO is this right?
+        detail.icmp.un.echo.id = 0;
+        detail.icmp.un.echo.sequence = 0;
+
+        //Add the ip header + 8 bytes in the data section
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &errorData[ETHER_LEN], IP_LEN + 8);
+
+        //TODO create Ip checksum 
+        //TODO create icmp checksum accross the icmp header and data.
+
     }
 
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
@@ -238,12 +263,12 @@ namespace shared{
 
         //Copy the data into the data array
         memcpy(this->data, &newHeader, ETHER_LEN);
-        
+
     }
 
     //This doesn't take into account the interface name and the socket used.
     void Packet::generateForwardData(struct ForwardingData& result){ 
-        
+
 
         memcpy(&result.destinationMacAddress, &detail.arp.arp_sha, 6);
         memcpy(&result.sourceMacAddress, &detail.arp.arp_tha, 6);
@@ -313,6 +338,98 @@ namespace shared{
 
     unsigned short Packet::getPacketLength() const {
         return ETHER_LEN + htons(ipHeader.tot_len);
+    }
+
+    bool Packet::validIpChecksum(){
+        constexpr int HEADER_SECTIONS = 10;
+
+        //The start of the ip header
+        uint16_t* buffer = (uint16_t*)&this->data[ETHER_LEN];
+
+        register unsigned long sum = 0;
+
+        int count = HEADER_SECTIONS;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        uint16_t result = ~(sum & 0xFFFF);
+        printf("IP Checksum: %x\n", result); 
+        printf("Recorded Checksum: %x\n", this->recordedIpChecksum);
+
+        //TODO do the actual check
+        return result == this->recordedIpChecksum;
+    }
+
+    //WARNING This assumes all packet modifications have already been done.
+    void Packet::calculateIpChecksum(){
+        constexpr int HEADER_SECTIONS = 10;
+
+        //The start of the ip header
+        //
+        //TODO change to u_short
+        uint8_t* buffer = &this->data[ETHER_LEN];
+
+        register unsigned long sum = 0;
+
+        int count = HEADER_SECTIONS;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        ipHeader.check = ~(sum & 0xFFFF);
+        //printf("IP Checksum: %x\n", ipHeader.check);
+    }
+
+    void Packet::decTTL(){
+        //Subtract the ttl and update the data.
+        ipHeader.ttl -= 1;
+        memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
+    }
+
+    bool Packet::zeroedTTL() const{
+        return ipHeader.ttl < 1;
+    }
+
+    void Packet::calculateIcmpChecksum(){
+        //Calculate the total length needed 
+        int icmpLen = ipHeader.tot_len - IP_LEN;
+
+        //The count is the length of the icmp data and header * the number of bits in a byte
+        //divided by 16 bits to do the checksum.
+        int count = (ipHeader.tot_len - IP_LEN) * 8 / 16;
+
+        //Start at the beginning of the icmp header and go to the end.
+        //TODO change to unsigned short
+        uint8_t* buffer = &this->data[ETHER_LEN + IP_LEN];
+
+        register unsigned long sum = 0;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        detail.icmp.checksum = ~(sum & 0xFFFF);
     }
 }
 
