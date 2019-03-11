@@ -44,7 +44,8 @@ namespace shared{
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
             //Record the checksum and set the value to 0 in struct.
-            this->recordedIpChecksum = ipHeader.check;
+            memcpy(&this->recordedIpChecksum, &ipHeader.check, 2);
+            printf("ipHeaderCheck: %x\n", ipHeader.check);
             ipHeader.check = 0;
 
             printf("Recorded IP Check: %x\n", recordedIpChecksum);
@@ -360,10 +361,10 @@ namespace shared{
 
         uint16_t result = ~(sum & 0xFFFF);
         printf("IP Checksum: %x\n", result); 
-        printf("Recorded Checksum: %x\n", recordedIpChecksum);
+        printf("Recorded Checksum: %x\n", this->recordedIpChecksum);
 
         //TODO do the actual check
-        return result == recordedIpChecksum;
+        return result == this->recordedIpChecksum;
     }
 
     //WARNING This assumes all packet modifications have already been done.
