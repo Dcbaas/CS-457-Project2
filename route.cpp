@@ -6,7 +6,8 @@
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
 #include <net/ethernet.h>
-#include <stdio.h> #include <errno.h>
+#include <stdio.h> 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <ifaddrs.h>
@@ -179,9 +180,22 @@ int main(int argc, char** argv){
                     }
                     //Its not for us so we look to forward it.
                     else{
+
+                        //First: has the ttl been exausted. if yes send an error 
+                        if(recivePacket.zeroedTTL()){
+                            //TODO implement
+                            continue;
+                        }
+
+                        //Second: Is the checksum correct if not then do something.
+                        if(!recivePacket.validIpChecksum()){
+                            //TODO implement
+                            continue;
+                        }
+
+                        
                         uint8_t* destinationIP = recivePacket.getIPAddress();
                         //Check if we have a mapping already
-
                         //Would this be going to a router? 
                         destinationIP = (routingManager.hasRouterForward(destinationIP)) ?
                             routingManager.getRouterForward(destinationIP) : destinationIP;
@@ -201,7 +215,7 @@ int main(int argc, char** argv){
 
                         //No mapping, find the interface assocaiated with the prefix
                         std::string targetInterface = routingManager.findRouting(destinationIP);
-                        //If we don't find anything in the table just discard the packet right now.
+                        //If we don't find anything in the table send an ICMP error 
                         if(targetInterface == ""){
                             //TODO implement
                             continue;
@@ -251,8 +265,12 @@ int main(int argc, char** argv){
                 send(sendingSocket, queuePacket.data, sendingLength, 0);
             }
             else{
+                //TODO change this to create send an ERROR ICMP and just get rid of the packet.
+                
+               
+                //INVALID WILL CHANGE.
                 //Push the packet back onto the queue wait for next cycle. 
-                holdingQueue.push(queuePacket);
+                //holdingQueue.push(queuePacket);
             }
         }
     }

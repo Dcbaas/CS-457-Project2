@@ -69,7 +69,9 @@ namespace shared{
         bool validIpChecksum();
 
         //Recalculates the checksum
-        uint16_t calculateIpChecksum();
+        void calculateIpChecksum();
+
+        bool zeroedTTL() const;
 
     private:
         HeaderDetail detail;
@@ -77,12 +79,18 @@ namespace shared{
         struct iphdr ipHeader;
         PacketType packetType;
 
+        uint16_t recordedIpChecksum;
+        uint16_t calculatedIpChecksum;
+
         void transferMAC(uint8_t* responseMAC, uint8_t* requestMAC);
         void transferIP(uint8_t* responseIP, uint8_t* requestIP);
 
         struct iphdr constructIPResponseHdr();
 
         bool equalIPs(uint8_t* rhs, uint8_t* lhs);
+
+        void calculateIcmpChecksum();
+
         static constexpr unsigned long ARP_CODE = 0x0806;
         static constexpr unsigned long IP_CODE = 0x0800;
         static constexpr unsigned char ETHER_LEN = 14;

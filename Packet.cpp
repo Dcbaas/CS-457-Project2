@@ -43,7 +43,10 @@ namespace shared{
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
+            //Subtract the ttl. Record the checksum and set the value to 0 in struct.
             ipHeader.ttl -= 1;
+            recordedIpChecksum = ipHeader.check;
+            ipHeader.check = 0;
 
             //Update the data to have the new ttl;
             memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
@@ -155,8 +158,10 @@ namespace shared{
             uint8_t errorCode, uint8_t* errorData) : ethernetHeader(etherError), ipHeader(ipError){
         detail.icmp.type = errorType;
         detail.icmp.code = errorCode;
-        detail.icmp.un.id = 0;
-        detail.icmp.un.sequence = 0;
+
+        //TODO is this right?
+        detail.icmp.un.echo.id = 0;
+        detail.icmp.un.echo.sequence = 0;
 
         //Add the ip header + 8 bytes in the data section
         memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &errorData[ETHER_LEN], IP_LEN + 8);
@@ -335,7 +340,8 @@ namespace shared{
     bool Packet::validIpChecksum(){
         constexpr int HEADER_SECTIONS = 10;
 
-        uint8_t* buffer = (uint8_t*)&data[ETHER_LEN];
+        //The start of the ip header
+        uint8_t* buffer = (uint8_t*)&this->data[ETHER_LEN];
 
         register unsigned long sum = 0;
 
@@ -355,7 +361,36 @@ namespace shared{
         printf("IP Checksum: %x\n", result); 
 
         //TODO do the actual check
-        return false;
+        return result == recordedIpChecksum;
+    }
+
+    //WARNING This assumes all packet modifications have already been done.
+    void Packet::calculateIpChecksum(){
+        constexpr int HEADER_SECTIONS = 10;
+
+        //The start of the ip header
+        uint8_t* buffer = (uint8_t*)&this->data[ETHER_LEN];
+
+        register unsigned long sum = 0;
+
+        int count = HEADER_SECTIONS;
+
+        while(count--){
+            sum += *buffer++;
+
+            if(sum & 0xFFFF0000){
+                /* carry occurred, so wrap around */
+                sum &= 0xFFFF;
+                sum++;
+            }
+        }
+
+        ipHeader.check = (sum & 0xFFFF);
+        printf("IP Checksum: %x\n", ipHeader.check);
+    }
+
+    bool Packet::zeroedTTL() const{
+        return ipHeader.ttl < 1;
     }
 }
 
