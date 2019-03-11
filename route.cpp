@@ -19,8 +19,7 @@
 #include <algorithm>
 #include <queue>
 
-void createEtherErrorHeader(shared::Packet& errorPacket, struct ether_header& header);
-void createIpErrorHeader(shared::Packet& errorPacket, struct iphdr& header);
+void printForwarding(uint8_t* ipAddress, uint8_t* MacAddress);
 
 int main(int argc, char** argv){
     //Define 2 Packet objects one for reciving, the other for sending.
@@ -226,6 +225,7 @@ int main(int argc, char** argv){
 
                             //Send the socket
                             send(sendingSocket, recivePacket.data, n, 0);
+                            printForwarding(destinationIP, forward->destinationMacAddress);
                             continue;
                         }
 
@@ -296,6 +296,7 @@ int main(int argc, char** argv){
 
                 //Send the packet
                 send(sendingSocket, queuePacket.data, sendingLength, 0);
+                printForwarding(destinationIP, found->destinationMacAddress);
             }
             else{
                 //TODO change this to create send an ERROR ICMP and just get rid of the packet.
@@ -324,3 +325,12 @@ int main(int argc, char** argv){
     return 0;
 }
 
+void printForwarding(uint8_t* ipAddress, uint8_t* macAddress){
+    uint32_t ipCovert;
+    memcpy(&ipCovert, ipAddress, 4);
+    struct in_addr address = {ipCovert};
+    printf("Forwarding\n");
+    printf("Forward IP: %s\n",inet_ntoa(address));
+    printf("Forwarding Mac: %x:%x:%x:%x:%x:%x\n", macAddress[0],macAddress[1], macAddress[2], 
+            macAddress[3], macAddress[4], macAddress[5]);
+}
