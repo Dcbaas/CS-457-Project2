@@ -416,6 +416,7 @@ namespace shared{
         }
 
         ipHeader.check = ~(sum & 0xFFFF);
+        memcpy(&data[ETHER_LEN], &ipHeader, IP_LEN);
         //printf("IP Checksum: %x\n", ipHeader.check);
     }
 
