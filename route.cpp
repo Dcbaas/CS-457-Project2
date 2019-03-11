@@ -6,8 +6,7 @@
 #include <sys/socket.h> 
 #include <netpacket/packet.h> 
 #include <net/ethernet.h>
-#include <stdio.h>
-#include <errno.h>
+#include <stdio.h> #include <errno.h>
 #include <sys/types.h>
 #include <sys/select.h>
 #include <ifaddrs.h>
@@ -204,6 +203,7 @@ int main(int argc, char** argv){
                         std::string targetInterface = routingManager.findRouting(destinationIP);
                         //If we don't find anything in the table just discard the packet right now.
                         if(targetInterface == ""){
+                            //TODO implement
                             continue;
                         }
                         //Get everything ready to send out an arp request.

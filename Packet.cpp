@@ -42,8 +42,13 @@ namespace shared{
             }
         }
         else if(ntohs(ethernetHeader.ether_type) == IP_CODE){
-            //ICMP stuff
             memcpy(&ipHeader, &data[ETHER_LEN], IP_LEN);
+            ipHeader.ttl -= 1;
+
+            //Update the data to have the new ttl;
+            memcpy(&this->data[ETHER_LEN], &ipHeader, IP_LEN);
+
+            //TODO only do icmp stuff if of type icmp
             memcpy(&detail.icmp, &data[ETHER_LEN + IP_LEN], ICMP_LEN);
             packetType = ICMP_REQUEST;
         }
@@ -118,7 +123,6 @@ namespace shared{
         return *this;
     }
 
-    //IMPELEMENT
     //Arp request
     Packet::Packet(uint8_t* senderIP, uint8_t* senderMAC, uint8_t* targetIP){
         uint8_t broadcastAddress[6] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF};
@@ -131,10 +135,6 @@ namespace shared{
         detail.arp.ea_hdr.ar_pln = 4;
         detail.arp.ea_hdr.ar_op = 256;
 
-        //Todo: Implement the rest of the arp header and make a proper Ethernet header that can
-        //be used on broadcast
-        //
-        //Also be sure to copy all of the data into the data array.
         memcpy(detail.arp.arp_sha, senderMAC, 6);
         memcpy(detail.arp.arp_spa, senderIP, 4);
         memcpy(detail.arp.arp_tha, targetAddress, 6);
@@ -149,6 +149,23 @@ namespace shared{
         memcpy(&data[ETHER_LEN], &detail.arp, ARP_LEN);
     }
 
+    //ICMP error packet.
+    //Error data is the raw data from the error packet in question
+    Packet::Packet(struct ether_header& etherError, struct iphdr& ipError, uint8_t errorType,
+            uint8_t errorCode, uint8_t* errorData) : ethernetHeader(etherError), ipHeader(ipError){
+        detail.icmp.type = errorType;
+        detail.icmp.code = errorCode;
+        detail.icmp.un.id = 0;
+        detail.icmp.un.sequence = 0;
+
+        //Add the ip header + 8 bytes in the data section
+        memcpy(&this->data[ETHER_LEN + IP_LEN + ICMP_LEN], &errorData[ETHER_LEN], IP_LEN + 8);
+
+        //TODO create Ip checksum 
+        //TODO create icmp checksum accross the icmp header and data.
+
+    }
+    
     Packet Packet::constructResponseARP(struct ifaddrs* interfaceList){
         //Remember that IPs only have 4 elements while MAC addresses have 6
         //The target IP we have and the MAC we are looking for.
