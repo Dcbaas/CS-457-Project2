@@ -436,7 +436,7 @@ namespace shared{
 
         //The count is the length of the icmp data and header * the number of bits in a byte
         //divided by 16 bits to do the checksum.
-        int count = (ipHeader.tot_len - IP_LEN) * 8 / 16;
+        int count = (ICMP_LEN + 28) * 8 / 16;
 
         //Start at the beginning of the icmp header and go to the end.
         //TODO change to unsigned short
@@ -455,6 +455,7 @@ namespace shared{
         }
 
         detail.icmp.checksum = ~(sum & 0xFFFF);
+        memcpy(&data[ETHER_LEN + IP_LEN], &detail.icmp, ICMP_LEN);
     }
 }
 
